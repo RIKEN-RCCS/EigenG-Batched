@@ -1,0 +1,41 @@
+ifeq (x$(HIP_PATH),x)
+	HIP_PATH=
+endif
+
+HIPCC=hipcc
+HIPCCOPT=\
+		-O3 \
+		-fno-strict-aliasing \
+		-fopenmp \
+		-Wall \
+		--offload-arch=gfx803,gfx900,gfx902,gfx906,gfx908,gfx90c \
+		-mfma \
+		-mwavefrontsize64 \
+		-Rpass-analysis=kernel-resource-usage \
+		-fhip-fp32-correctly-rounded-divide-sqrt \
+		-fvectorize
+
+OBJS = main.o eigen_GPU_check.o
+OBJSS = $(OBJS) eigen_GPU_batch.o
+LIBS = libeigenGbatch.a
+LIBOPT = -leigenGbatch
+
+all: a.out $(LIBS)
+a.out : $(OBJSS) $(LIBS)
+	$(HIPCC) -o $@ $(OBJSS) $(HIPCCOPT) -L./ -lhipsolver -lm -lgomp
+	cp a.out a.out-hip
+
+main.o: main.cpp
+	$(HIPCC) -c -o $@ $< $(HIPCCOPT) -DPRINT_DIAGNOSTIC=0
+libeigenGbatch.a: eigen_GPU_batch.o
+	ar cr libeigenGbatch.a $<
+	ranlib libeigenGbatch.a 
+eigen_GPU_batch.o: eigen_GPU_batch.cu tql2.hpp
+	$(HIPCC) -c -o $@ $< $(HIPCCOPT)
+	$(HIPCC) -S $< $(HIPCCOPT)
+eigen_GPU_check.o: eigen_GPU_check.cu
+	$(HIPCC) -c -o $@ $< $(HIPCCOPT)
+
+clean:
+	-\rm a.out a.out-* *.o *.cu_o *.ptx lib*.a
+

@@ -1,0 +1,70 @@
+ifeq (x$(CUDA_PATH),x)
+	CUDA_PATH=/usr/local/cuda
+endif
+
+NVCC=$(CUDA_PATH)/bin/nvcc
+NVCCOPT=\
+                -O3 \
+                --compiler-options -fno-strict-aliasing \
+                --compiler-options -fopenmp \
+                --compiler-options -Wall \
+                -DUNIX \
+                --ptxas-options=-v \
+                --generate-code arch=compute_60,code=sm_60 \
+                --generate-code arch=compute_61,code=sm_61 \
+                --generate-code arch=compute_62,code=sm_62 \
+                --generate-code arch=compute_70,code=sm_70 \
+                --generate-code arch=compute_75,code=sm_75 \
+                --generate-code arch=compute_80,code=sm_80 \
+                --generate-code arch=compute_86,code=sm_86 \
+                --generate-code arch=compute_89,code=sm_89 \
+                --generate-code arch=compute_90,code=sm_90 \
+		--extra-device-vectorization \
+		--restrict \
+		--ptxas-options='--allow-expensive-optimizations true' \
+		--ptxas-options='--register-usage-level 0' \
+		--maxrregcount=127 \
+		--dopt=on \
+		--no-compress \
+		--prec-div=true --prec-sqrt=true --fmad=true
+NVCCOPTmin=\
+                -O3 \
+                --compiler-options -fno-strict-aliasing \
+                --compiler-options -fopenmp \
+                --compiler-options -Wall \
+                -DUNIX \
+                --ptxas-options=-v \
+                --generate-code arch=compute_80,code=sm_80 \
+		--extra-device-vectorization \
+		--restrict \
+		--ptxas-options='--allow-expensive-optimizations true' \
+		--ptxas-options='--register-usage-level 0' \
+		--maxrregcount=127 \
+		--dopt=on \
+		--no-compress \
+		--prec-div=true --prec-sqrt=true --fmad=true
+
+OBJS = main.o eigen_GPU_check.o
+OBJSS = $(OBJS) eigen_GPU_batch.o
+LIBS = libeigenGbatch.a
+LIBOPT = -leigenGbatch
+
+all: a.out $(LIBS)
+a.out : $(OBJSS) $(LIBS)
+	$(NVCC) -o $@ $(OBJSS) -L./ -L$(CUDA_PATH)/lib64 -lcuda -lcudart -lcusolver -lcublas -lm -lgomp
+	cp a.out a.out-cuda
+
+main.o: main.cpp
+	$(NVCC) -c -o $@ $< -I$(CUDA_PATH)/include -DPRINT_DIAGNOSTIC=0 --compiler-options -fopenmp
+libeigenGbatch.a: eigen_GPU_batch.o
+	ar cr libeigenGbatch.a $<
+	ranlib libeigenGbatch.a 
+eigen_GPU_batch.o: eigen_GPU_batch.cu tql2.hpp
+	$(NVCC) -c -o $@ $(NVCCOPT) $<
+	$(NVCC) --ptx $(NVCCOPTmin) $<
+eigen_GPU_check.o: eigen_GPU_check.cu
+	$(NVCC) -c -o $@ $(NVCCOPT) $<
+
+clean:
+	-\rm a.out a.out-* *.o *.cu_o *.ptx lib*.a
+

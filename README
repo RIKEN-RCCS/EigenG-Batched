@@ -1,0 +1,172 @@
+
+EigenG-Batched
+
+0. Revision Histrory
+  Version 1.4 (2023.07.22) ::
+    Merge the CUDA version and the HIP version, Makefile_cuda and Makefile_hip
+
+  Version 1.3 (2023.07.19) ::
+    Modification in a virtual machine specification as sm_XXX in Makefile.
+
+  Version 1.2 (2022.10.13) ::
+    Repository name has been replaced from EigenG-Batch to EigenG-Batched.
+    A bit revision in README and the LICENCE notice.
+    
+  Version 1.1 (2022.09.20) ::
+    Avoidance of zero-division by IEE754 Minus-Zero.
+
+  Version 1.0 (2022.08.15) ::
+    First public release.
+
+  Belows are Preliminary versions // not officially released
+  Version 2022.06.16 ::
+    New implementation of hypot function and warp-aligned symv kernel.
+  Version 2022.06.05 ::
+    Avoidance of the warp divergency.
+  Version 2022.05.22 ::
+    libeigenGbatch.a is supported.
+    An API to get working buffer size is separately supported.
+    A cooperative run on a non-warp unit is synchronized on a warp appropriately
+  Version 2022.05.20 ::
+    Zero-division fault is avoided.
+    LETKF-like test matrix is preliminary included.
+  Version 2022.05.16 ::
+    Tiled_partition cooperative group version are included for the case N <= 32.
+    small kernels are not used anymore.
+
+
+
+1. Build, Use, and Note
+  Edit 'Makefile' appropriately; especially, CUDA_PATH, and so on.
+  Run 'make' command, and confirm libeigenGbatch.a is generated.
+  When make your cuda executable, link libeigenGbatch.a.
+  The obtained eigenpairs are not sorted by eigenvalue in default.
+  If you need sorting, edit eigen_GPU_batch.cu as '#define DO_SORT 1'.
+  Offload to multiple GPU's is available with appropriate use of device id's
+  and CUDA streams.
+
+  Source code examples are as follows.
+
+  ** In the case of C++,
+  #include "eigen_GPU_batch.hpp"
+  void foo(...){
+    float *a, *w, *work;
+    size_t lwork;
+    ...
+    eigen_GPU_batch_BufferSize (L, nm, n, m, a, w, &lwork);
+    cudaMalloc(&work, lwork);
+    ...
+    eigen_GPU_batch (L, nm, n, m, a, w, work, stream);
+    ...
+  }
+  
+  ** In the case of C,
+  #include "eigen_GPU_batch.h"
+  void foo(...){
+    float *a, *w, *work;
+    size_t lwork;
+    ...
+    eigen_GPU_batch_FP (L, nm, n, m, a, (float*)&lwork, NULL, NULL);
+    cudaMalloc(&work, lwork);
+    ...
+    eigen_GPU_batch_FP (L, nm, n, m, a, w, work, stream);
+    ...
+  }
+  
+
+
+2. Main file Structure:
+  root:- eigen_GPU_batch.cu  -- 1: and 2:
+       + eigen_GPU_batch.hpp
+       + eigen_GPU_batch.h
+       + misc_gpu.hpp
+       + misc.hpp
+       + old_kernels/ -- 3:
+       + fortran/ -- 4:
+
+  1:- hhsy2tr.hpp
+    + imtql2.hpp
+    + tql2.hpp (optional)
+    + hhtr2sy.hpp
+
+  2:- tred1_tiled.hpp
+    + hhsy2tr_tiled.hpp (optional)
+    + imtql2_tiled.hpp
+    + tql2_tiled.hpp (optional)
+    + hhtr2sy_tiled.hpp
+
+  3:(old or experimental implementations)
+    + tred1.hpp
+    + tred1_tiled.hpp
+    + trbak1.hpp
+    + trbak1_tiled.hpp
+    + {tred1,tql2,trbak1,hhtr2sy}_small.hpp
+    + imtql2.hpp
+
+  4: fortran reference codes
+    + fortran/*.f
+
+  5: benchmark+test codes
+    + main.*
+    + eigen_GPU_check.*
+
+
+
+3. Tunable parameters
+
+hhsy2tr.hpp(hhsy2tr_tiled.hpp) and eigen_GPU_batch.cu
+  const int BLK_J = 3;
+  const int BLK_K = 3;
+  const int BLK_M = 4; <= must be the same as the parameter 'mb' in eigen_GPU_batch.cu.
+
+hhtr2sy.hpp
+  const int BLK_I = 4 if T is float else 3
+  const int BLK_J = 4 if T is float else 3
+hhtr2sy_tiled.hpp
+  const int BLK_I = (tile_size>=16)?4:((tile_size>=8)?3:2);
+  const int BLK_J = (tile_size>=16)?4:((tile_size>=8)?3:2);
+
+eigen_GPU_batch.hpp:
+  eigen_GPU_batch_get_Launch_params
+  paraeters numTB abd numTH affect to the performance strongly.
+   :: Deafault numTB = deviceProp.multiProcessorCount*12;
+   :: Deafault numTH = 32*8;
+  Note numTH must be multiple of 32.
+
+common:
+  #pragma unroll
+  #pragma unroll 1
+   :: in previous version of 20220428, wrong unroll factor was specified.
+   :: Some facts through several branch comparisons reveal the unroll factor is not strongly related to the performance. The one without unroll pragmas might show better performance.
+
+Makefile:
+  compiler option to the NVCC for ptx compiling
+  --maxrregcount=128
+   :: Since the batch kernel has a memory-bound property, even though the kernel looks categorized in BLAS3, it is significant to hide memory latency. Thus, it leads to better performance to maximize the number of active thread blocks, meaning high system usability with hiding a memory access behind multiple thread switching.
+
+
+
+4. To Do
+
+* Take advantage of TensorCore acceleration.
+* Flexible interleave data format and thread scheduling.
+* Wilkinson's combined implementation with SYR2 + SYMV like Kevd by Kudo.
+* Divide and conqure method (probably not neccessary for batched version)
+* Half precision version + Iterative refinment.
+* Automation to validate the kernels by calling compute-sanitizer and so on.
+* Any power of the input matrix, for example, Square root, etc.
+
+5. Note for the HIP environment
+
+* For the target ID table for AMD/HIP is available from
+  https://llvm.org/docs/AMDGPUUsage.html
+  RX480 : gfx803
+  MI100 : gfx908
+  MI2XX : ??
+  Ryzen APU GXX: gfx90c
+
+
+5. COPYRIGHT and LICENCING
+
+Please find and read LICENCE.txt.
+
