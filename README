@@ -1,7 +1,7 @@
 
 EigenG-Batched
 
-0. Revision Histrory
+0. Revision History
   Version 1.4 (2023.07.22) ::
     Merge the CUDA version and the HIP version, Makefile_cuda and Makefile_hip
 
