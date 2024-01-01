@@ -16,6 +16,7 @@ print_header(const char *func_name, int argc, char **argv)
   //char	t[1024];
   gpuDeviceProp deviceProp;
   int  id = 0;
+
   gpuGetDeviceProperties ( &deviceProp, id );
   int driver_Version;
   gpuDriverGetVersion( &driver_Version );

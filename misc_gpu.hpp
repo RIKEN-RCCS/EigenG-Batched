@@ -570,7 +570,7 @@ sync_over_warp(void)
   __syncwarp();
 #endif
 #if defined(__HIPCC__)
-  int constexpr tile_size = 64;
+  int constexpr tile_size = WARP_GPU_SIZE;
 #if COOPERATIVE_GROUP_STANDARD
   cooperative_groups::tiled_partition<tile_size>(cooperative_groups::this_thread_block()).sync();
 #else
@@ -592,7 +592,7 @@ bcast_over_warp(T &x_, const int root)
 #endif
 #if defined(__HIPCC__)
   T x = x_;
-  x = __shfl( x, root-1, 64 );
+  x = __shfl( x, root-1, WARP_GPU_SIZE );
   x_ = x;
 #endif
 }
@@ -653,12 +653,14 @@ sum_over_warp(T &x_)
 #endif
 #if defined(__HIPCC__)
   T x = x_;
-  x += __shfl_xor( x, 1, 64 );
-  x += __shfl_xor( x, 2, 64 );
-  x += __shfl_xor( x, 4, 64 );
-  x += __shfl_xor( x, 8, 64 );
-  x += __shfl_xor( x, 16, 64 );
+  x += __shfl_xor( x, 1, WARP_GPU_SIZE );
+  x += __shfl_xor( x, 2, WARP_GPU_SIZE );
+  x += __shfl_xor( x, 4, WARP_GPU_SIZE );
+  x += __shfl_xor( x, 8, WARP_GPU_SIZE );
+  x += __shfl_xor( x, 16, WARP_GPU_SIZE );
+#if WARP_GPU_SIZE == 64
   x += __shfl_xor( x, 32, 64 );
+#endif
   x_ = x;
 #endif
 
@@ -712,13 +714,15 @@ sum2_over_warp(T &x_, T &y_)
 
   y = __shfl_xor_sync( 0xffffffff, x, 1, 32 );
 #else
-  x = y + __shfl_xor( x, 1 , 64 );
-  x +=    __shfl_xor( x, 2 , 64 );
-  x +=    __shfl_xor( x, 4 , 64 );
-  x +=    __shfl_xor( x, 8 , 64 );
-  x +=    __shfl_xor( x, 16, 64 );
+  x = y + __shfl_xor( x, 1 , WARP_GPU_SIZE );
+  x +=    __shfl_xor( x, 2 , WARP_GPU_SIZE );
+  x +=    __shfl_xor( x, 4 , WARP_GPU_SIZE );
+  x +=    __shfl_xor( x, 8 , WARP_GPU_SIZE );
+  x +=    __shfl_xor( x, 16, WARP_GPU_SIZE );
+#if WARP_GPU_SIZE == 64
   x +=    __shfl_xor( x, 32, 64 );
-  y = __shfl_xor( x, 1, 64 );
+#endif
+  y = __shfl_xor( x, 1, WARP_GPU_SIZE );
 #endif
   
   {
@@ -807,25 +811,27 @@ sum4_over_warp(T &x_, T &y_, T &z_, T &w_)
 #if defined(__HIPCC__)
   const bool eee = (threadIdx.x & 0x1);
   __Cond_swap__(x, y, eee);
-  x = y + __shfl_xor( x, 1, 64 );
+  x = y + __shfl_xor( x, 1, WARP_GPU_SIZE );
   __Cond_swap__(z, w, eee);
-  z = w + __shfl_xor( z, 1, 64 );
+  z = w + __shfl_xor( z, 1, WARP_GPU_SIZE );
 
   const bool fff = (threadIdx.x & 0x2);
   __Cond_swap__(x, z, fff);
-  x = z + __shfl_xor( x, 2, 64 );
+  x = z + __shfl_xor( x, 2, WARP_GPU_SIZE );
 
-  x += __shfl_xor( x, 4, 64 );
-  x += __shfl_xor( x, 8, 64 );
-  x += __shfl_xor( x, 16, 64 );
+  x += __shfl_xor( x, 4, WARP_GPU_SIZE );
+  x += __shfl_xor( x, 8, WARP_GPU_SIZE );
+  x += __shfl_xor( x, 16, WARP_GPU_SIZE );
+#if WARP_GPU_SIZE == 64
   x += __shfl_xor( x, 32, 64 );
+#endif
 
-  z = __shfl_xor( x, 2, 64 );
+  z = __shfl_xor( x, 2, WARP_GPU_SIZE );
   __Cond_swap__(x, z, !fff);
 
-  y = __shfl_xor( x, 1, 64 );
+  y = __shfl_xor( x, 1, WARP_GPU_SIZE );
   __Cond_swap__(x, y, !eee);
-  w = __shfl_xor( z, 1, 64 );
+  w = __shfl_xor( z, 1, WARP_GPU_SIZE );
   __Cond_swap__(z, w, !eee);
   
 #endif
@@ -901,12 +907,14 @@ red2_over_warp(T &x_, const T y_)
   x += __shfl_xor_sync( 0xffffffff, x, 16, 32 );
 #endif
 #if defined(__HIPCC__)
-  x = y + __shfl_xor( x,  1, 64 );
-  x +=    __shfl_xor( x,  2, 64 );
-  x +=    __shfl_xor( x,  4, 64 );
-  x +=    __shfl_xor( x,  8, 64 );
-  x +=    __shfl_xor( x, 16, 64 );
-  x +=    __shfl_xor( x, 32, 64 );
+  x = y + __shfl_xor( x,  1, WARP_GPU_SIZE );
+  x +=    __shfl_xor( x,  2, WARP_GPU_SIZE );
+  x +=    __shfl_xor( x,  4, WARP_GPU_SIZE );
+  x +=    __shfl_xor( x,  8, WARP_GPU_SIZE );
+  x +=    __shfl_xor( x, 16, WARP_GPU_SIZE );
+#if WARP_GPU_SIZE == 64
+  x +=    __shfl_xor( x, 32, WARP_GPU_SIZE );
+#endif
 #endif
   x_ = x;
 }

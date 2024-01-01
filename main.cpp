@@ -322,7 +322,6 @@ main(int argc, char* argv[])
 {
   print_header("GPU-Batch-eigensolver", argc, argv);
 
-//  const int iter = 100;
   const int iter = 20;
   const int numBatch = 16384;
 //  const Matrix_type type = Matrix_type::MATRIX_FRANK;
@@ -333,13 +332,10 @@ main(int argc, char* argv[])
   const int nums[] = { 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 23, 24, 25, 28, 31, 32, 33, 47, 48, 49, 63, 64, 65, 95, 96, 97, 127, 128, 129, 159, 160, 161, 191, 192, 193, 223, 224, 225, 255, 256, 257, 319, 320, 321, 511, 512, 0 };
 #endif
 #if defined(__HIPCC__)
-  const int nums[] = { 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 23, 24, 25, 28, 31, 32, 33, 47, 48, 49, 63, 64, 65, 95, 96, 97, 127, 128, 129, 159, 160, 161, 191, 192, 193, 223, 224, 225, 255, 256, 0 };
-  //const int nums[] = { 65, 96, 97, 128, 129, 0 };
+  //const int nums[] = { 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 23, 24, 25, 28, 31, 32, 33, 47, 48, 49, 63, 64, 65, 95, 96, 97, 127, 128, 129, 159, 160, 161, 191, 192, 193, 223, 224, 225, 255, 256, 0 };
+  const int nums[] = { 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 23, 24, 25, 28, 31, 32, 33, 47, 48, 49, 63, 64, 65, 95, 96, 97, 127, 128, 129, 0 };
 #endif
 
-//  printf(">> half accuracy test\n");
-//  for(int n=1; n<=96; n*=2)
-//    GPU_batch_test<half,Solver_type::EIGENG_BATCH>(1, 1, n, type, true);
 
   printf(">> float accuracy test\n");
   for(int i=0; nums[i] > 0; i++) { const int n = nums[i];
@@ -356,7 +352,6 @@ main(int argc, char* argv[])
   for(int i=0; nums[i] > 0; i++) { const int n = nums[i];
     GPU_batch_test<float,Solver_type::EIGENG_BATCH>(iter, numBatch, n, type, true);
   }
-
   printf("\n");
   printf(">> double EigenG TQL avarage of %d iterations.\n",iter);
   for(int i=0; nums[i] > 0; i++) { const int n = nums[i];
@@ -370,7 +365,6 @@ main(int argc, char* argv[])
     GPU_batch_test<float,Solver_type::CUSOLVER_EVJ_BATCH>(1, 1, n, type, true);
     GPU_batch_test<float,Solver_type::CUSOLVER_EVJ_BATCH>(iter, numBatch, n, type, false);
   }
-
   printf("\n");
   printf(">> double cusolver Jacobi acc_check and avarage of %d iterations.\n",iter);
   for(int n=8; n<=128; n*=2) {
@@ -386,7 +380,6 @@ main(int argc, char* argv[])
     GPU_batch_test<float,Solver_type::HIPSOLVER_EVJ_BATCH>(1, 1, n, type, true);
     GPU_batch_test<float,Solver_type::HIPSOLVER_EVJ_BATCH>(iter, numBatch, n, type, false);
   }
-
   printf("\n");
   printf(">> double hipsolver Jacobi acc_chk and avarage out of the %d iterations.\n",iter);
   for(int n=8; n<=64; n*=2) {

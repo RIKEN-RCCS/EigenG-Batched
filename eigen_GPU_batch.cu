@@ -9,6 +9,7 @@
 #endif
 #include "gpu_arch.h"
 
+
 //--
 #include "misc_gpu.hpp"
 #include "eigen_GPU_batch.hpp"
@@ -269,7 +270,7 @@ eigen_GPU_batch_RUN(const int L, const int nm, const int n, const int m, T * a, 
 #endif
       eigen_GPU_batch_tiled_ <T, 32> <<<numTB, numTH, sizeSH, stream>>> (L, nm, n, m, a, w, wk_, PRELOAD_SLOT);
       break;
-#if defined(__HIPCC__)
+#if WARP_GPU_SIZE==64
     case 64:
     default:
       eigen_GPU_batch_tiled_ <T, 64> <<<numTB, numTH, sizeSH, stream>>> (L, nm, n, m, a, w, wk_, PRELOAD_SLOT);

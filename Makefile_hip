@@ -8,12 +8,13 @@ HIPCCOPT=\
 		-fno-strict-aliasing \
 		-fopenmp \
 		-Wall \
-		--offload-arch=gfx803,gfx900,gfx902,gfx906,gfx908,gfx90c \
 		-mfma \
-		-mwavefrontsize64 \
+		-fvectorize \
 		-Rpass-analysis=kernel-resource-usage \
 		-fhip-fp32-correctly-rounded-divide-sqrt \
-		-fvectorize
+		-Wno-unused-result \
+		-Wno-unused-variable \
+		--offload-arch=gfx908,gfx90a,gfx942,gfx1100,gfx1101,gfx1102
 
 OBJS = main.o eigen_GPU_check.o
 OBJSS = $(OBJS) eigen_GPU_batch.o
