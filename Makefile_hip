@@ -10,11 +10,27 @@ HIPCCOPT=\
 		-Wall \
 		-mfma \
 		-fvectorize \
+		-fgpu-sanitize \
 		-Rpass-analysis=kernel-resource-usage \
 		-fhip-fp32-correctly-rounded-divide-sqrt \
 		-Wno-unused-result \
-		-Wno-unused-variable \
-		--offload-arch=gfx908,gfx90a,gfx942,gfx1100,gfx1101,gfx1102
+		-Wno-unused-variable
+
+# AMD Instinct MI100
+HIPCCOPT:= $(HIPCCOPT) \
+		--offload-arch=gfx908
+# AMD Instinct MI2X0
+HIPCCOPT:= $(HIPCCOPT) \
+		--offload-arch=gfx90a
+# AMD Instinct MI300x
+HIPCCOPT:= $(HIPCCOPT) \
+		--offload-arch=gfx942
+# AMD Instinct RDNA2
+HIPCCOPT:= $(HIPCCOPT) \
+		--offload-arch=gfx1030,gfx1031,gfx1032,gfx1033
+# AMD Instinct RDNA3
+HIPCCOPT:= $(HIPCCOPT) \
+		--offload-arch=gfx1100,gfx1101,gfx1102,gfx1103
 
 OBJS = main.o eigen_GPU_check.o
 OBJSS = $(OBJS) eigen_GPU_batch.o

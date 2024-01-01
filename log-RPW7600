@@ -1,0 +1,215 @@
+<!--/****************************************
+Evaluating the performance on GPU-Batch-eigensolver
+
+ % ./a.out 
+
+Date : Sun Dec 31 13:55:13 JST 2023
+Host : fourier.r-ccs27.riken.jp
+Device Name : AMD Radeon PRO W7600
+ROCm Driver : 60032.3
+*****************************************/-->
+>> float accuracy test
+N=3 time=1.689911e-03 5.325725e-05[GF/s] 1.313679e-04[GB/s]
+N=4 time=5.507469e-05 3.873528e-03[GF/s] 6.681835e-03[GB/s]
+N=5 time=5.555153e-05 7.500544e-03[GF/s] 9.900718e-03[GB/s]
+N=7 time=5.698204e-05 2.006480e-02[GF/s] 1.793548e-02[GB/s]
+N=8 time=6.270409e-05 2.721779e-02[GF/s] 2.092368e-02[GB/s]
+N=9 time=7.057190e-05 3.443297e-02[GF/s] 2.321037e-02[GB/s]
+N=10 time=6.961823e-05 4.788018e-02[GF/s] 2.872811e-02[GB/s]
+N=11 time=7.534027e-05 5.888838e-02[GF/s] 3.182893e-02[GB/s]
+N=12 time=8.106232e-05 7.105644e-02[GF/s] 3.493609e-02[GB/s]
+N=14 time=9.059906e-05 1.009576e-01[GF/s] 4.203134e-02[GB/s]
+N=15 time=9.965897e-05 1.128850e-01[GF/s] 4.364886e-02[GB/s]
+N=16 time=9.775162e-05 1.396737e-01[GF/s] 5.041349e-02[GB/s]
+N=17 time=1.132488e-04 1.446078e-01[GF/s] 4.893649e-02[GB/s]
+N=20 time=1.294613e-04 2.059818e-01[GF/s] 5.870481e-02[GB/s]
+N=23 time=1.573563e-04 2.577379e-01[GF/s] 6.343567e-02[GB/s]
+N=24 time=1.659393e-04 2.776919e-01[GF/s] 6.537329e-02[GB/s]
+N=25 time=1.668930e-04 3.120762e-01[GF/s] 7.040439e-02[GB/s]
+N=28 time=1.916885e-04 3.817304e-01[GF/s] 7.654083e-02[GB/s]
+N=31 time=2.303123e-04 4.311681e-01[GF/s] 7.779869e-02[GB/s]
+N=32 time=2.419949e-04 4.513595e-01[GF/s] 7.881159e-02[GB/s]
+N=33 time=5.359650e-04 2.235034e-01[GF/s] 3.780471e-02[GB/s]
+N=47 time=7.691383e-04 4.499537e-01[GF/s] 5.291896e-02[GB/s]
+N=48 time=8.087158e-04 4.558338e-01[GF/s] 5.246837e-02[GB/s]
+N=49 time=8.022785e-04 4.888120e-01[GF/s] 5.509059e-02[GB/s]
+N=63 time=1.290083e-03 6.460747e-01[GF/s] 5.635452e-02[GB/s]
+N=64 time=1.371861e-03 6.369549e-01[GF/s] 5.467611e-02[GB/s]
+N=65 time=1.364946e-03 6.706613e-01[GF/s] 5.666889e-02[GB/s]
+N=95 time=3.177881e-03 8.993151e-01[GF/s] 5.171685e-02[GB/s]
+N=96 time=3.119946e-03 9.452473e-01[GF/s] 5.378555e-02[GB/s]
+N=97 time=3.103971e-03 9.801132e-01[GF/s] 5.518801e-02[GB/s]
+N=127 time=5.998135e-03 1.138344e+00[GF/s] 4.882551e-02[GB/s]
+N=128 time=6.171942e-03 1.132627e+00[GF/s] 4.819747e-02[GB/s]
+N=129 time=5.898237e-03 1.213181e+00[GF/s] 5.122174e-02[GB/s]
+
+>> double accuracy test
+N=3 time=7.390976e-05 1.217701e-03[GF/s] 6.007326e-03[GB/s]
+N=4 time=7.081032e-05 3.012744e-03[GF/s] 1.039397e-02[GB/s]
+N=5 time=6.794930e-05 6.132023e-03[GF/s] 1.618854e-02[GB/s]
+N=7 time=7.367134e-05 1.551938e-02[GF/s] 2.774485e-02[GB/s]
+N=8 time=9.202957e-05 1.854476e-02[GF/s] 2.851257e-02[GB/s]
+N=9 time=1.013279e-04 2.398155e-02[GF/s] 3.233068e-02[GB/s]
+N=10 time=1.070499e-04 3.113811e-02[GF/s] 3.736574e-02[GB/s]
+N=11 time=1.051426e-04 4.219666e-02[GF/s] 4.561424e-02[GB/s]
+N=12 time=1.237392e-04 4.654950e-02[GF/s] 4.577368e-02[GB/s]
+N=14 time=1.430511e-04 6.393983e-02[GF/s] 5.323970e-02[GB/s]
+N=15 time=1.559258e-04 7.214972e-02[GF/s] 5.579579e-02[GB/s]
+N=16 time=1.549721e-04 8.810189e-02[GF/s] 6.359855e-02[GB/s]
+N=17 time=1.804829e-04 9.073807e-02[GF/s] 6.141303e-02[GB/s]
+N=20 time=2.129078e-04 1.252498e-01[GF/s] 7.139241e-02[GB/s]
+N=23 time=2.636909e-04 1.538038e-01[GF/s] 7.570984e-02[GB/s]
+N=24 time=2.689362e-04 1.713418e-01[GF/s] 8.067342e-02[GB/s]
+N=25 time=2.806187e-04 1.856018e-01[GF/s] 8.374354e-02[GB/s]
+N=28 time=3.263950e-04 2.241864e-01[GF/s] 8.990333e-02[GB/s]
+N=31 time=3.895760e-04 2.549011e-01[GF/s] 9.198720e-02[GB/s]
+N=32 time=3.995895e-04 2.733472e-01[GF/s] 9.545795e-02[GB/s]
+N=33 time=7.135868e-04 1.678703e-01[GF/s] 5.678917e-02[GB/s]
+N=47 time=1.116037e-03 3.100942e-01[GF/s] 7.294021e-02[GB/s]
+N=48 time=1.174450e-03 3.138831e-01[GF/s] 7.225851e-02[GB/s]
+N=49 time=1.165867e-03 3.363706e-01[GF/s] 7.581998e-02[GB/s]
+N=63 time=1.950502e-03 4.273207e-01[GF/s] 7.454695e-02[GB/s]
+N=64 time=1.971960e-03 4.431192e-01[GF/s] 7.607456e-02[GB/s]
+N=65 time=2.113819e-03 4.330629e-01[GF/s] 7.318507e-02[GB/s]
+N=95 time=4.581213e-03 6.238341e-01[GF/s] 7.174956e-02[GB/s]
+N=96 time=4.663229e-03 6.324202e-01[GF/s] 7.197073e-02[GB/s]
+N=97 time=4.755259e-03 6.397640e-01[GF/s] 7.204740e-02[GB/s]
+N=127 time=8.840561e-03 7.723428e-01[GF/s] 6.625417e-02[GB/s]
+N=128 time=8.665323e-03 8.067220e-01[GF/s] 6.865803e-02[GB/s]
+N=129 time=8.991003e-03 7.958656e-01[GF/s] 6.720452e-02[GB/s]
+
+>> float EigenG TQL average of 20 iterations.
+N=3 time=1.229644e-04 1.199177e+01[GF/s] 2.957969e+01[GB/s]
+N=4 time=1.474142e-04 2.371042e+01[GF/s] 4.090048e+01[GB/s]
+N=5 time=2.446651e-04 2.790208e+01[GF/s] 3.683075e+01[GB/s]
+N=7 time=2.875805e-04 6.513784e+01[GF/s] 5.822526e+01[GB/s]
+N=8 time=3.247261e-04 8.610957e+01[GF/s] 6.619674e+01[GB/s]
+N=9 time=7.446051e-04 5.346877e+01[GF/s] 3.604191e+01[GB/s]
+N=10 time=7.779837e-04 7.019856e+01[GF/s] 4.211914e+01[GB/s]
+N=11 time=9.240866e-04 7.866184e+01[GF/s] 4.251640e+01[GB/s]
+N=12 time=1.038289e-03 9.089168e+01[GF/s] 4.468841e+01[GB/s]
+N=14 time=1.273870e-03 1.176407e+02[GF/s] 4.897694e+01[GB/s]
+N=15 time=1.476693e-03 1.248194e+02[GF/s] 4.826351e+01[GB/s]
+N=16 time=1.463783e-03 1.528206e+02[GF/s] 5.515870e+01[GB/s]
+N=17 time=3.346145e-03 8.018639e+01[GF/s] 2.713574e+01[GB/s]
+N=20 time=4.371488e-03 9.994461e+01[GF/s] 2.848421e+01[GB/s]
+N=23 time=5.864561e-03 1.133044e+02[GF/s] 2.788701e+01[GB/s]
+N=24 time=6.332958e-03 1.192136e+02[GF/s] 2.806487e+01[GB/s]
+N=25 time=6.526601e-03 1.307470e+02[GF/s] 2.949652e+01[GB/s]
+N=28 time=7.996583e-03 1.499230e+02[GF/s] 3.006110e+01[GB/s]
+N=31 time=1.012846e-02 1.606350e+02[GF/s] 2.898451e+01[GB/s]
+N=32 time=1.060379e-02 1.687671e+02[GF/s] 2.946831e+01[GB/s]
+N=33 time=2.069039e-02 9.485752e+01[GF/s] 1.604477e+01[GB/s]
+N=47 time=4.491693e-02 1.262357e+02[GF/s] 1.484655e+01[GB/s]
+N=48 time=4.641188e-02 1.301347e+02[GF/s] 1.497905e+01[GB/s]
+N=49 time=4.666387e-02 1.376912e+02[GF/s] 1.551822e+01[GB/s]
+N=63 time=8.151237e-02 1.675316e+02[GF/s] 1.461311e+01[GB/s]
+N=64 time=8.282847e-02 1.728458e+02[GF/s] 1.483706e+01[GB/s]
+N=65 time=8.483977e-02 1.767825e+02[GF/s] 1.493760e+01[GB/s]
+N=95 time=2.101723e-01 2.227892e+02[GF/s] 1.281192e+01[GB/s]
+N=96 time=2.086419e-01 2.315852e+02[GF/s] 1.317744e+01[GB/s]
+N=97 time=2.177492e-01 2.289061e+02[GF/s] 1.288920e+01[GB/s]
+N=127 time=4.431519e-01 2.524394e+02[GF/s] 1.082755e+01[GB/s]
+N=128 time=4.768029e-01 2.402092e+02[GF/s] 1.022179e+01[GB/s]
+N=129 time=4.592808e-01 2.552640e+02[GF/s] 1.077750e+01[GB/s]
+
+>> double EigenG TQL avarage of 20 iterations.
+N=3 time=5.316854e-04 2.773370e+00[GF/s] 1.368196e+01[GB/s]
+N=4 time=5.922318e-04 5.901834e+00[GF/s] 2.036133e+01[GB/s]
+N=5 time=1.165068e-03 5.859457e+00[GF/s] 1.546897e+01[GB/s]
+N=7 time=1.443028e-03 1.298129e+01[GF/s] 2.320737e+01[GB/s]
+N=8 time=1.613772e-03 1.732712e+01[GF/s] 2.664045e+01[GB/s]
+N=9 time=3.606665e-03 1.103876e+01[GF/s] 1.488189e+01[GB/s]
+N=10 time=4.018044e-03 1.359202e+01[GF/s] 1.631042e+01[GB/s]
+N=11 time=4.475081e-03 1.624336e+01[GF/s] 1.755894e+01[GB/s]
+N=12 time=4.920065e-03 1.918101e+01[GF/s] 1.886133e+01[GB/s]
+N=14 time=6.013417e-03 2.492077e+01[GF/s] 2.075036e+01[GB/s]
+N=15 time=6.745923e-03 2.732317e+01[GF/s] 2.112992e+01[GB/s]
+N=16 time=7.153893e-03 3.126916e+01[GF/s] 2.257243e+01[GB/s]
+N=17 time=1.579639e-02 1.698587e+01[GF/s] 1.149632e+01[GB/s]
+N=20 time=2.017046e-02 2.166072e+01[GF/s] 1.234661e+01[GB/s]
+N=23 time=2.566664e-02 2.588887e+01[GF/s] 1.274379e+01[GB/s]
+N=24 time=2.726458e-02 2.769068e+01[GF/s] 1.303769e+01[GB/s]
+N=25 time=2.905967e-02 2.936486e+01[GF/s] 1.324943e+01[GB/s]
+N=28 time=3.502451e-02 3.422951e+01[GF/s] 1.372673e+01[GB/s]
+N=31 time=4.267305e-02 3.812677e+01[GF/s] 1.375897e+01[GB/s]
+N=32 time=4.459033e-02 4.013358e+01[GF/s] 1.401540e+01[GB/s]
+N=33 time=5.818189e-02 3.373282e+01[GF/s] 1.141154e+01[GB/s]
+N=47 time=1.186500e-01 4.778863e+01[GF/s] 1.124082e+01[GB/s]
+N=48 time=1.223732e-01 4.935556e+01[GF/s] 1.136206e+01[GB/s]
+N=49 time=1.286986e-01 4.992444e+01[GF/s] 1.125327e+01[GB/s]
+N=63 time=2.194191e-01 6.223662e+01[GF/s] 1.085730e+01[GB/s]
+N=64 time=2.238816e-01 6.394700e+01[GF/s] 1.097840e+01[GB/s]
+N=65 time=2.353287e-01 6.373293e+01[GF/s] 1.077049e+01[GB/s]
+N=95 time=5.593064e-01 8.371816e+01[GF/s] 9.628748e+00[GB/s]
+N=96 time=5.614377e-01 8.606188e+01[GF/s] 9.794021e+00[GB/s]
+N=97 time=5.869193e-01 8.492499e+01[GF/s] 9.563877e+00[GB/s]
+N=127 time=1.135993e+00 9.847687e+01[GF/s] 8.447678e+00[GB/s]
+N=128 time=1.436139e+00 7.975024e+01[GF/s] 6.787337e+00[GB/s]
+N=129 time=1.188763e+00 9.862168e+01[GF/s] 8.327816e+00[GB/s]
+
+>> float hipsolver Jacobi acc_chk and avarage of the 20 iterations.
+N=8 time=5.899191e-02 2.893052e-05[GF/s] 2.224034e-05[GB/s]
+N=8 time=3.535783e-03 7.908298e+00[GF/s] 6.079504e+00[GB/s]
+N=16 time=1.947641e-03 7.010189e-03[GF/s] 2.530240e-03[GB/s]
+N=16 time=1.064345e-02 2.101727e+01[GF/s] 7.585922e+00[GB/s]
+N=32 time=1.580238e-03 6.912037e-02[GF/s] 1.206907e-02[GB/s]
+N=32 time=9.017090e-02 1.984642e+01[GF/s] 3.465371e+00[GB/s]
+[000000] Gave up the iteration.
+[000000] Accuracy error in the relative resisdual (||Ax-dx||_F=6.669045e+02/3.305345e-05/1.192093e-07)
+[000000] Orthonormality error (||ZZ-I||_F=2.059897e+05/3.305345e-05/1.192093e-07)
+N=64 time=3.576756e-03 2.443033e-01[GF/s] 2.097096e-02[GB/s]
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+N=64 time=2.805566e-02 5.102913e+02[GF/s] 4.380333e+01[GB/s]
+
+>> double hipsolver Jacobi acc_chk and avarage out of the 20 iterations.
+N=8 time=5.133867e-03 3.324330e-04[GF/s] 5.111157e-04[GB/s]
+N=8 time=1.212829e-02 2.305520e+00[GF/s] 3.544737e+00[GB/s]
+N=16 time=1.296043e-03 1.053463e-02[GF/s] 7.604684e-03[GB/s]
+N=16 time=5.303069e-02 4.218240e+00[GF/s] 3.045042e+00[GB/s]
+N=32 time=2.104998e-03 5.188921e-02[GF/s] 1.812069e-02[GB/s]
+N=32 time=4.021523e-01 4.449980e+00[GF/s] 1.554017e+00[GB/s]
+[000000] Gave up the iteration.
+[000000] Accuracy error in the relative resisdual (||Ax-dx||_F=inf/2.031706e-12/2.220446e-16)
+[000000] Orthonormality error (||ZZ-I||_F=2.059896e+05/2.031706e-12/2.220446e-16)
+N=64 time=1.504564e-02 5.807750e-02[GF/s] 9.970727e-03[GB/s]
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+[000000] Gave up the iteration.
+N=64 time=1.398563e-03 1.023662e+04[GF/s] 1.757419e+03[GB/s]

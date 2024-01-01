@@ -165,9 +165,15 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb_, T 
     {
     const int i2 = i0 + m1 - 1;
     const int mm = m0 - m1 + 1;
+#if defined(__HIPCC__)
+    const int BLK_J = (tile_size<=16)?3:4;
+    const int BLK_K = (tile_size<=16)?3:4;
+    const int BLK_M = (tile_size<=16)?2:3;
+#else
     const int BLK_J = (tile_size<=16)?2:3;
     const int BLK_K = (tile_size<=16)?2:3;
     const int BLK_M = (tile_size<=16)?2:3;
+#endif
 #pragma unroll 1
     for(int k0=1; k0<=i2; k0+=YDIM*BLK_K) { int k=k0+BLK_K*(yid-1);
 #pragma unroll 1

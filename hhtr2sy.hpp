@@ -40,8 +40,13 @@ hhtr2sy_( const int nm, const int n, T * __restrict__ a_, const int m, T * __res
   }
 
 
+#if defined(__HIPCC__)
+  const int BLK_I = (std::is_same<T,float>::value) ? 5 : 4;
+  const int BLK_J = (std::is_same<T,float>::value) ? 4 : 3;
+#else
   const int BLK_I = (std::is_same<T,float>::value) ? 4 : 3;
   const int BLK_J = (std::is_same<T,float>::value) ? 4 : 3;
+#endif
   const int ii = (n-1)%BLK_I + 1;
 
   sync_over_warp();

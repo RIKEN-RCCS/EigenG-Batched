@@ -2,6 +2,9 @@
 EigenG-Batched
 
 0. Revision Histrory
+  Version 1.5 (2024.01.01) ::
+    CUDA 12.3, and Rocm 6.0 has been supported
+
   Version 1.4 (2023.07.22) ::
     Merge the CUDA version and the HIP version, Makefile_cuda and Makefile_hip
 
@@ -160,9 +163,12 @@ Makefile:
 
 * For the target ID table for AMD/HIP is available from
   https://llvm.org/docs/AMDGPUUsage.html
-  RX480 : gfx803
+  RX480 : gfx803 obsolated in Rocm 6.0
   MI100 : gfx908
-  MI2XX : ??
+  MI250 : gfx90a
+  MI300 : gfx90a
+  Radeon (RDNA 2): gfx1030
+  Radeon (RDNA 3): gfx1100,gfx1101,gfx1102
   Ryzen APU GXX: gfx90c
 
 

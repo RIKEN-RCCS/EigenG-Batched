@@ -37,8 +37,13 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
   }
 
 
+#if defined(__HIPCC__)
   const int BLK_I = (tile_size>=16)?3:((tile_size>=8)?3:2);
   const int BLK_J = (tile_size>=16)?4:((tile_size>=8)?3:2);
+#else
+  const int BLK_I = (tile_size>=16)?3:((tile_size>=8)?3:2);
+  const int BLK_J = (tile_size>=16)?4:((tile_size>=8)?3:2);
+#endif
   const int ii = (n-1) % BLK_I + 1;
 
   sync_over_cg<T,tile_size>();

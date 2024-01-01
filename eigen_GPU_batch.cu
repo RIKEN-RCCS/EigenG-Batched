@@ -44,9 +44,10 @@ eigen_GPU_batch_n1_(const int L, const int nm, const int n, T *a_, T *w_)
 
   const int step = blockDim.x*gridDim.x;
   #pragma unroll
-  for (int id=pos; id<L; id+=step, a += len*step, w += n*step) {
+  for (int id=pos; id<L; id+=step) {
     *w = *a;
     *a = static_cast<T>(1.0);
+    a += len*step; w += n*step;
   }
 }
 
@@ -65,10 +66,11 @@ eigen_GPU_batch_tiled_(const int L, const int nm, const int n, const int m, T *a
 #if DO_PREFETCH
   a = a_ + pos*len;
   #pragma unroll 1
-  for (int id_=0; id_<PRELOAD_SLOT; id_+=step, a += len*step) {
+  for (int id_=0; id_<PRELOAD_SLOT; id_+=step) {
     int id = id_ + pos;
     if ( id < L )
     prefetch_mat_cg<T, tile_size> (nm*n, a);
+    a += len*step;
   }
 #endif
 
@@ -76,7 +78,7 @@ eigen_GPU_batch_tiled_(const int L, const int nm, const int n, const int m, T *a
   w  = w_  + pos*m;
   wk = wk_ + pos*len;
   #pragma unroll 1
-  for (int id_=0; id_<L; id_+=step, a += len*step, w += n*step) {
+  for (int id_=0; id_<L; id_+=step) {
     const int id = id_ + pos;
     const bool run = (id < L);
 
@@ -116,6 +118,7 @@ eigen_GPU_batch_tiled_(const int L, const int nm, const int n, const int m, T *a
     if(run) jac_tiled<T, tile_size> ( a, wk, nm, n, w );
 #endif
 
+    a += len*step; w += n*step;
   }
 }
 
@@ -137,10 +140,11 @@ eigen_GPU_batch_(const int L, const int nm, const int n, const int m, T *a_, T *
 #if DO_PREFETCH
   a = a_ + pos*len;
   #pragma unroll 1
-  for (int id_=0; id_<PRELOAD_SLOT; id_+=step, a += len*step) {
+  for (int id_=0; id_<PRELOAD_SLOT; id_+=step) {
     int id = id_ + pos;
     if ( id < L )
     prefetch_mat_cg<T, WARP_GPU_SIZE> (nm*n, a);
+    a += len*step;
   }
 #endif
 
@@ -153,7 +157,7 @@ eigen_GPU_batch_(const int L, const int nm, const int n, const int m, T *a_, T *
   wk = wk_ + pos*len;
   e  = e_  + pos*n;
   #pragma unroll 1
-  for (int id_=0; id_<L; id_+=step, a += len*step, w += n*step) {
+  for (int id_=0; id_<L; id_+=step) {
     const int id = id_ + pos;
     const bool run = (id < L);
 
@@ -192,6 +196,7 @@ eigen_GPU_batch_(const int L, const int nm, const int n, const int m, T *a_, T *
     t3 = __global_timer__();
 #endif
 
+    a += len*step; w += n*step;
   }
 
 #if TIMER
