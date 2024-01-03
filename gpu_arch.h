@@ -41,11 +41,9 @@ typedef	cudaError_t		gpuError_t;
 #if defined(__HIPCC__)
 #include <hip/hip_runtime.h>
 
-/* #if __HIP_DEVICE_COMPILE__ && */
-
 #undef WARP_GPU_SIZE
-#if ( defined(__GFX7__) || defined(__GFX8__) || defined(__GFX9__) )
-#define WARP_GPU_SIZE  __AMDGCN_WAVEFRONT_SIZE
+#if defined(__GFX7__) || defined(__GFX8__) || defined(__GFX9__)
+#define WARP_GPU_SIZE  64
 #else
 #define WARP_GPU_SIZE  32
 #endif

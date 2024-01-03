@@ -17,20 +17,21 @@ HIPCCOPT=\
 		-Wno-unused-variable
 
 # AMD Instinct MI100
-HIPCCOPT:= $(HIPCCOPT) \
-		--offload-arch=gfx908
+#HIPCCOPT:= $(HIPCCOPT) \
+#		--offload-arch=gfx908 -D__GFX9__
 # AMD Instinct MI2X0
-HIPCCOPT:= $(HIPCCOPT) \
-		--offload-arch=gfx90a
+#HIPCCOPT:= $(HIPCCOPT) \
+#		--offload-arch=gfx90a -D__GFX9__
 # AMD Instinct MI300x
-HIPCCOPT:= $(HIPCCOPT) \
-		--offload-arch=gfx942
+#HIPCCOPT:= $(HIPCCOPT) \
+#		--offload-arch=gfx942 -D__GFX9__
 # AMD Instinct RDNA2
-HIPCCOPT:= $(HIPCCOPT) \
-		--offload-arch=gfx1030,gfx1031,gfx1032,gfx1033
+#HIPCCOPT:= $(HIPCCOPT) \
+#		--offload-arch=gfx1030,gfx1031,gfx1032,gfx1033 -D__GFX10__
 # AMD Instinct RDNA3
 HIPCCOPT:= $(HIPCCOPT) \
-		--offload-arch=gfx1100,gfx1101,gfx1102,gfx1103
+		--offload-arch=gfx1100,gfx1101,gfx1102,gfx1103 -D__GFX11__
+
 
 OBJS = main.o eigen_GPU_check.o
 OBJSS = $(OBJS) eigen_GPU_batch.o
