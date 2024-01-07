@@ -73,49 +73,68 @@ imtql2_( const int nm, const int n,
         r = (di1 - dl) + Div(el, f + Sign(g, f));
       }
 
-      T s = ONE;
-      T c = ONE;
-      T delta_d = ZERO;
-
       int i;
-      #pragma unroll 1
-      for(i=m-1; i>=l; i--) {
+      T delta_d = ZERO;
+      {
+        T s = ONE;
+        T c = ONE;
 
-        const T ei = e(i);
-        const T f = s * ei;
-        const T g = r;
-        r = pythag(f, r);
-        _if_ (r == ZERO) break;
+        #pragma unroll 1
+        for(int i0=m-1; i0>=l; i0-=WARP_GPU_SIZE) {
+          int i1=max(l,i0-WARP_GPU_SIZE+1);
 
-        const T b = c * ei;
-        s = Div(f, r);
-        c = Div(g, r);
+          T * c_tmp = shmem;
+          T * s_tmp = c_tmp + WARP_GPU_SIZE;
 
-        const T dix = di1 - delta_d;
-        di1 = d(i);
-        const T q = (di1 - dix) * s + 2 * c * b;
-        const T dx1 = fma(s, q, dix);
-        delta_d = dx1 - dix;
-        sync_over_warp();
-        _if_ (myid==1) { e(i+1) = r; d(i+1) = dx1; }
-        r = c * q - b;
-
-        {
-          T * zki0_ptr = &z(myid,i+0);
-          T * zki1_ptr = &z(myid,i+1);
+          bool flag = false;
           #pragma unroll 1
-          for(int k=myid; k<=n; k+=WARP_GPU_SIZE) {
-            const T f0 = *zki0_ptr;
-            const T f1 = *zki1_ptr;
-            *zki1_ptr = s * f0 + c * f1;
-            *zki0_ptr = c * f0 - s * f1;
-            zki0_ptr+=WARP_GPU_SIZE; zki1_ptr+=WARP_GPU_SIZE;
-          }
+          for(i=i0; i>=i1; i--) {
+
+            const T ei = e(i);
+            const T f = s * ei;
+            const T g = r;
+            r = pythag(f, r);
+            _if_ (r == ZERO) { flag = true; break; }
+
+            const T b = c * ei;
+            s = Div(f, r);
+            c = Div(g, r);
+
+            const T dix = di1 - delta_d;
+            di1 = d(i);
+            const T q = (di1 - dix) * s + 2 * c * b;
+            const T dx1 = fma(s, q, dix);
+            delta_d = dx1 - dix;
+
+            sync_over_warp();
+            _if_ (myid==1) {
+       	      e(i+1) = r; d(i+1) = dx1;
+              c_tmp[i0-i] = c; s_tmp[i0-i] = s;
+	    } sync_over_warp();
+
+            r = c * q - b;
+
+          } i1 = max(i1, i+1);
+
+          #pragma unroll 4
+          for(i=i0; i>=i1; i--) {
+            c = c_tmp[i0-i]; s = s_tmp[i0-i];
+            T * zki0_ptr = &z(myid,i+0);
+            T * zki1_ptr = &z(myid,i+1);
+            for(int k=myid; k<=n; k+=WARP_GPU_SIZE) {
+              const T f0 = *zki0_ptr;
+              const T f1 = *zki1_ptr;
+              *zki1_ptr = s * f0 + c * f1;
+              *zki0_ptr = c * f0 - s * f1;
+              zki0_ptr+=WARP_GPU_SIZE; zki1_ptr+=WARP_GPU_SIZE;
+            }
+          } sync_over_warp();
+
+          if (flag) { i = i1-1; break; }
         }
+      }
 
-      } sync_over_warp();
-
-      _if_ (myid == 1) {
+      _if_ (myid==1) {
         const int j = max(i+1,l);
         d(j) -= delta_d;
         e(j) = r;

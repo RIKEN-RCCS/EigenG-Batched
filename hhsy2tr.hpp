@@ -42,7 +42,11 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
   }
 
 
-  const int XDIM = (std::is_same<T,double>::value) ? 4 : 8;
+#if defined(__NVCC__)
+  const int XDIM = 16; //(std::is_same<T,double>::value) ? 8 : 16;
+#else
+  const int XDIM = 8;
+#endif
   const int YDIM = WARP_GPU_SIZE/XDIM;
   const int xid = ((myid-1) % XDIM)+1;
   const int yid = ((myid-1) / XDIM)+1;
@@ -223,7 +227,9 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
 
       T uj[BLK_J][BLK_M], uk[BLK_K][BLK_M], vj[BLK_J][BLK_M], vk[BLK_K][BLK_M];
 
+#if defined(__NVCC__)
       asm volatile ("//--open");
+#endif
 #pragma unroll 1
       for(int m=m1; m<=m1+(mm%BLK_M)-1; m++) {
           for(int M=0;M<1;M++){
@@ -261,7 +267,9 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
           ukm+=nm; vkm+=nm;
           }
       }
+#if defined(__NVCC__)
       asm volatile ("//--close");
+#endif
 
       for(int K=0;K<BLK_K;K++){
       _if_(k+K<=i2) {

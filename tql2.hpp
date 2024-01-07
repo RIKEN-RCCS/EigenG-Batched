@@ -94,30 +94,58 @@ tql2_( const int nm, const int n,
         const T el1 = e(l+1);
 
         #pragma unroll 1
-        for(int i=m-1; i>=l; i--) {
+        for(int i0=m-1; i0>=l; i0-=tile_size) {
+          int i1=max(l,i0-tile_size+1);
 
-          c3 = c2;
-          c2 = c;
-          s2 = s;
+          T * c_tmp = shmem;
+          T * s_tmp = c_tmp + tile_size;
+	  T cc, ss, ee, dd;
 
-	  const T ei = e(i);
-	  const T di = d(i);
-          const T g = c * ei;
-          const T h = c * p;
-          const T r = pythag(p, ei);
+          #pragma unroll 1
+          for(int i=i0; i>=i1; i--) {
 
-          const T ei1 = s * r;
-          s = Div(ei, r);
-          c = Div(p, r);
-          p = c * di - s * g;
-          const T di1 = h + s * (c * g + s * di);
-          sync_over_warp();
-	  _if_ (myid==1) { e(i + 1) = ei1; d(i + 1) = di1; }
+            c3 = c2;
+            c2 = c;
+            s2 = s;
 
-	  {
+	    const T ei = e(i);
+	    const T di = d(i);
+            const T g = c * ei;
+            const T h = c * p;
+            const T r = pythag(p, ei);
+
+            const T ei1 = s * r;
+            s = Div(ei, r);
+            c = Div(p, r);
+            p = c * di - s * g;
+            const T di1 = h + s * (c * g + s * di);
+
+#if 0
+            sync_over_warp();
+	    _if_ (i0-i==myid-1) {
+              e(i + 1) = ei1; d(i + 1) = di1;
+	      c_tmp[myid-1] = c; s_tmp[myid-1] = s;
+            } sync_over_warp();
+#else
+	    _if_ (i0-i==myid-1) {
+              ee = ei1; dd = di1; cc = c; ss = s;
+            }
+#endif
+
+	  } sync_over_warp();
+#if 0
+#else
+	  _if_ (i0-i1>=myid-1) {
+            int i = i0 - (myid - 1);
+            e(i + 1) = ee; d(i + 1) = dd;
+	    c_tmp[myid-1] = cc; s_tmp[myid-1] = ss;
+	  } sync_over_warp();
+#endif
+
+          for(int i=i0; i>=i1; i--) {
+	    c = c_tmp[i0-i]; s = s_tmp[i0-i];
 	    T * zki0_ptr = &z(myid,i+0);
             T * zki1_ptr = &z(myid,i+1);
-            #pragma unroll 1
             for(int k=myid; k<=n; k+=WARP_GPU_SIZE ) {
               const T h0 = *zki0_ptr;
               const T h1 = *zki1_ptr;
@@ -125,11 +153,11 @@ tql2_( const int nm, const int n,
               *zki0_ptr = c * h0 - s * h1;
               zki0_ptr+=WARP_GPU_SIZE; zki1_ptr+=WARP_GPU_SIZE;
             }
-          }
+          } sync_over_warp();
 
-        } sync_over_warp();
+        }
 
-        _if_ (myid == 1) {
+        _if_ (myid==1) {
           const T r = Div(-s * s2 * c3 * el1 * e(l), dl1);
           e(l) = s * r;
           d(l) = c * r;
