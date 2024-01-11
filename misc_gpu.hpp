@@ -579,7 +579,11 @@ sync_over_warp(void)
 #endif
   
 }
+#if defined(__NVCC__)
 #define SYNC_IF_NEEDED(...) _if_(tile_size<WARP_GPU_SIZE)sync_over_warp()
+#else
+#define SYNC_IF_NEEDED(...) /* */
+#endif
 
 template <class T>
 __device__ __forceinline__ void
