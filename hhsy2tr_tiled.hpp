@@ -1,6 +1,4 @@
-#ifndef __HEADER_HHSY2TR_TILED_HPP__
-#define __HEADER_HHSY2TR_TILED_HPP__
-
+#pragma once
 
 template <class T, unsigned tile_size>
 __device__ __noinline__ void
@@ -288,4 +286,3 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb_, T 
   sync_over_cg<T,tile_size>();
 }
 
-#endif

@@ -1,0 +1,15 @@
+*.o
+*.cu_o
+*.ptx
+*.a
+*.s
+a.out
+a.out-*
+b.out
+*.hpp-*
+*.nsys-rep
+.nfs*
+log-*
+devel
+devel/*
+fortran

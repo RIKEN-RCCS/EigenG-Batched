@@ -48,7 +48,7 @@ main.o: main.cpp
 libeigenGbatch.a: eigen_GPU_batch.o
 	ar cr libeigenGbatch.a $<
 	ranlib libeigenGbatch.a 
-eigen_GPU_batch.o: eigen_GPU_batch.cu tql2.hpp
+eigen_GPU_batch.o: eigen_GPU_batch.cu
 	$(HIPCC) -c -o $@ $< $(HIPCCOPT)
 	$(HIPCC) -S $< $(HIPCCOPT)
 eigen_GPU_check.o: eigen_GPU_check.cu

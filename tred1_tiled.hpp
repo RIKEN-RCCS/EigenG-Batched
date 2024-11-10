@@ -1,6 +1,4 @@
-#ifndef __HEADER_TRED1_TILED_HPP__
-#define __HEADER_TRED1_TILED_HPP__
-
+#pragma once
 
 template <class T, int tile_size>
 __device__  __noinline__ void
@@ -157,6 +155,4 @@ tred1_tiled_(const int nm, const int n, T * __restrict__ a_)
 #undef        e
   sync_over_cg<T,tile_size>();
 }
-
-#endif
 

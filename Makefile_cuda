@@ -59,7 +59,7 @@ main.o: main.cpp
 libeigenGbatch.a: eigen_GPU_batch.o
 	ar cr libeigenGbatch.a $<
 	ranlib libeigenGbatch.a 
-eigen_GPU_batch.o: eigen_GPU_batch.cu tql2.hpp
+eigen_GPU_batch.o: eigen_GPU_batch.cu
 	$(NVCC) -c -o $@ $(NVCCOPT) $<
 	$(NVCC) --ptx $(NVCCOPTmin) $<
 eigen_GPU_check.o: eigen_GPU_check.cu

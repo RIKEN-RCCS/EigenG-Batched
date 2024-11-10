@@ -1,11 +1,13 @@
 #define	TIMER		0
 #if defined(__NVCC__)
-#define	USE_IMTQL	0
+#define	USE_IMTQL	1
 #define DO_PREFETCH	1
+#define	DO_SORT		1
 #endif
 #if defined(__HIPCC__)
 #define	USE_IMTQL	0
 #define DO_PREFETCH	0
+#define	DO_SORT		0
 #endif
 #include "gpu_arch.h"
 

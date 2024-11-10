@@ -2,6 +2,10 @@
 EigenG-Batched
 
 0. Revision Histrory
+  Version 1.6 (2024.11.20) ::
+    Sorting option has been fixed (#define DO_SORT 1).
+    Confirmed to perform on CUDA 12.6, Rocm 6.2, or priors.
+
   Version 1.5 (2024.01.01) ::
     CUDA 12.3, and Rocm 6.0 has been supported
 

@@ -1,6 +1,4 @@
-#ifndef __HEADER_HHSY2TR_HPP__
-#define __HEADER_HHSY2TR_HPP__
-
+#pragma once
 
 template <class T>
 __device__ __noinline__ void
@@ -314,4 +312,3 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
   sync_over_warp();
 }
 
-#endif

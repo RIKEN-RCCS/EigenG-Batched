@@ -2,6 +2,8 @@
 #define __HEADER_EIGEN_GPU_BATCH_HPP__
 
 #include <stdio.h>
+#include <math.h>
+#include <float.h>
 #include <type_traits>
 
 #if defined(__NVCC__)

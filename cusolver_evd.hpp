@@ -2,10 +2,12 @@
 
 #include <cusolverDn.h>
 
+#if 0
 void
 cusolver_evd_test(int n, half *A, int lda, half *W, int batchSize)
 {
 }
+#endif
 
 void
 cusolver_evd_test(int n, double *A, int lda, double *W, int batchSize)
@@ -16,8 +18,11 @@ cusolver_evd_test(int n, double *A, int lda, double *W, int batchSize)
   cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
   cusolverDnSetStream(cusolverH, stream);
 
+  cusolverStatus_t err;
+  cudaError_t status;
+
   int lwork;
-  cusolverDnDsyevd_bufferSize(
+  err = cusolverDnDsyevd_bufferSize(
     cusolverH,
     CUSOLVER_EIG_MODE_VECTOR,
     CUBLAS_FILL_MODE_UPPER,
@@ -28,13 +33,17 @@ cusolver_evd_test(int n, double *A, int lda, double *W, int batchSize)
     &lwork
     );
 
+  if ( err != CUSOLVER_STATUS_SUCCESS ) { return; }
+
   int *d_Info;
   double *d_work;
-  cudaMalloc((void**)&d_Info, sizeof(int));
-  cudaMalloc((void**)&d_work, sizeof(double)*lwork);
+  status = cudaMalloc((void**)&d_Info, sizeof(int)*batchSize);
+  if ( status != cudaSuccess || d_Info == NULL ) { return; }
+  status = cudaMalloc((void**)&d_work, sizeof(double)*lwork);
+  if ( status != cudaSuccess || d_work == NULL ) { cudaFree(d_Info); return; }
 
   for(int i=0; i<batchSize; i++) {
-    cusolverDnDsyevd(
+    err = cusolverDnDsyevd(
       cusolverH,
       CUSOLVER_EIG_MODE_VECTOR,
       CUBLAS_FILL_MODE_UPPER,
@@ -44,18 +53,24 @@ cusolver_evd_test(int n, double *A, int lda, double *W, int batchSize)
       W+(size_t)i*(n),
       d_work,
       lwork,
-      d_Info
+      d_Info+i
       );
   }
 
   cudaFree(d_work);
   int * info = (int *)malloc(sizeof(int)*batchSize);
-  cudaMemcpy(info,d_Info,sizeof(int)*batchSize,cudaMemcpyDeviceToHost);
+  status = cudaMemcpy(info,d_Info,sizeof(int)*batchSize,cudaMemcpyDeviceToHost);
   cudaFree(d_Info);
 
-  for(int i=0;i<batchSize;i++){
-    if(info[i]!=0) {
-      printf("[%06d] Gave up the iteration.\n",i); break;
+  if ( err == CUSOLVER_STATUS_INVALID_VALUE ) {
+    if ( info[0] < 0 ) {
+        printf("[%06d]'s parameter was wrong.\n",-info[0]);
+    }
+  } else {
+    for(int i=0;i<batchSize;i++){
+      if(info[i]==n+1) {
+        printf("[%06d] Gave up the iteration.\n",i); break;
+      }
     }
   }
   free(info);
@@ -74,8 +89,11 @@ cusolver_evd_test(int n, float *A, int lda, float *W, int batchSize)
   cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
   cusolverDnSetStream(cusolverH, stream);
 
+  cusolverStatus_t err;
+  cudaError_t status;
+
   int lwork;
-  cusolverDnSsyevd_bufferSize(
+  err = cusolverDnSsyevd_bufferSize(
     cusolverH,
     CUSOLVER_EIG_MODE_VECTOR,
     CUBLAS_FILL_MODE_UPPER,
@@ -86,13 +104,17 @@ cusolver_evd_test(int n, float *A, int lda, float *W, int batchSize)
     &lwork
     );
 
+  if ( err != CUSOLVER_STATUS_SUCCESS ) { return; }
+
   int *s_Info;
   float *s_work;
-  cudaMalloc((void**)&s_Info, sizeof(int));
-  cudaMalloc((void**)&s_work, sizeof(float)*lwork);
+  status = cudaMalloc((void**)&s_Info, sizeof(int)*batchSize);
+  if ( status != cudaSuccess || s_Info == NULL ) { return; }
+  status = cudaMalloc((void**)&s_work, sizeof(float)*lwork);
+  if ( status != cudaSuccess || s_work == NULL ) { cudaFree(s_Info); return; }
 
   for(int i=0; i<batchSize; i++) {
-    cusolverDnSsyevd(
+    err = cusolverDnSsyevd(
       cusolverH,
       CUSOLVER_EIG_MODE_VECTOR,
       CUBLAS_FILL_MODE_UPPER,
@@ -102,22 +124,27 @@ cusolver_evd_test(int n, float *A, int lda, float *W, int batchSize)
       W+(size_t)i*(n),
       s_work,
       lwork,
-      s_Info
+      s_Info+i
       );
   }
 
   cudaFree(s_work);
   int * info = (int *)malloc(sizeof(int)*batchSize);
-  cudaMemcpy(info,s_Info,sizeof(int)*batchSize,cudaMemcpyDeviceToHost);
+  status = cudaMemcpy(info,s_Info,sizeof(int)*batchSize,cudaMemcpyDeviceToHost);
   cudaFree(s_Info);
 
-  for(int i=0;i<batchSize;i++){
-    if(info[i]!=0) {
-      printf("[%06d] Gave up the iteration.\n",i); break;
+  if ( err == CUSOLVER_STATUS_INVALID_VALUE ) {
+    if ( info[0] < 0 ) {
+        printf("[%06d]'s parameter was wrong.\n",-info[0]);
+    }
+  } else {
+    for(int i=0;i<batchSize;i++){
+      if(info[i]==n+1) {
+        printf("[%06d] Gave up the iteration.\n",i); break;
+      }
     }
   }
   free(info);
-
 
   cusolverDnDestroy(cusolverH);
   cudaStreamDestroy(stream);

@@ -18,6 +18,9 @@
 
 #if defined(__NVCC__)
 #include "cusolver.hpp"
+#if CUSOLVER_VERSION > 11604
+#include "cusolver64.hpp"
+#endif
 #include "cusolver_evd.hpp"
 #endif
 #if defined(__HIPCC__)
@@ -42,6 +45,9 @@ enum class Matrix_type {
 enum class Solver_type {
   EIGENG_BATCH,
   CUSOLVER_EVJ_BATCH,
+#if CUSOLVER_VERSION > 11604
+  CUSOLVER_EV_BATCH,
+#endif
   CUSOLVER_EVD,
   HIPSOLVER_EVJ_BATCH,
   HIPSOLVER_EVD
@@ -267,6 +273,11 @@ GPU_batch_test(const int Itr, const int L, const int n, const Matrix_type type, 
     case Solver_type::CUSOLVER_EVJ_BATCH:
       cusolver_test(n, a_d, nm, w_d, L);
       break;
+#if CUSOLVER_VERSION > 11604
+    case Solver_type::CUSOLVER_EV_BATCH:
+      cusolver64_test(n, a_d, nm, w_d, L);
+      break;
+#endif
     case Solver_type::CUSOLVER_EVD:
       cusolver_evd_test(n, a_d, nm, w_d, L);
       break;
@@ -323,10 +334,11 @@ main(int argc, char* argv[])
   print_header("GPU-Batch-eigensolver", argc, argv);
 
   const int iter = 20;
-  const int numBatch = 16384;
+  const int numBatch = 512;
+//  const int numBatch = 16384*1;
 //  const Matrix_type type = Matrix_type::MATRIX_FRANK;
-  const Matrix_type type = Matrix_type::MATRIX_LETKF;
-//  const Matrix_type type = Matrix_type::MATRIX_SYM_RAND;
+//  const Matrix_type type = Matrix_type::MATRIX_LETKF;
+  const Matrix_type type = Matrix_type::MATRIX_SYM_RAND;
 
 #if defined(__NVCC__)
   const int nums[] = { 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 23, 24, 25, 28, 31, 32, 33, 47, 48, 49, 63, 64, 65, 95, 96, 97, 127, 128, 129, 159, 160, 161, 191, 192, 193, 223, 224, 225, 255, 256, 257, 319, 320, 321, 511, 512, 0 };
@@ -337,6 +349,7 @@ main(int argc, char* argv[])
 #endif
 
 
+#if 1
   printf(">> float accuracy test\n");
   for(int i=0; nums[i] > 0; i++) { const int n = nums[i];
     GPU_batch_test<float,Solver_type::EIGENG_BATCH>(1, 1, n, type, true);
@@ -346,7 +359,8 @@ main(int argc, char* argv[])
   for(int i=0; nums[i] > 0; i++) { const int n = nums[i];
     GPU_batch_test<double,Solver_type::EIGENG_BATCH>(1, 1, n, type, true);
   }
-
+#endif
+#if 1
   printf("\n");
   printf(">> float EigenG TQL average of %d iterations.\n",iter);
   for(int i=0; nums[i] > 0; i++) { const int n = nums[i];
@@ -357,19 +371,46 @@ main(int argc, char* argv[])
   for(int i=0; nums[i] > 0; i++) { const int n = nums[i];
     GPU_batch_test<double,Solver_type::EIGENG_BATCH>(iter, numBatch, n, type, true);
   }
+#endif
 
 #if defined(__NVCC__)
   printf("\n");
   printf(">> float cusolver Jacobi acc_check and avarage of %d iterations.\n",iter);
-  for(int n=8; n<=128; n*=2) {
+  for(int n=8; n<=512; n*=2) {
     GPU_batch_test<float,Solver_type::CUSOLVER_EVJ_BATCH>(1, 1, n, type, true);
     GPU_batch_test<float,Solver_type::CUSOLVER_EVJ_BATCH>(iter, numBatch, n, type, false);
   }
   printf("\n");
   printf(">> double cusolver Jacobi acc_check and avarage of %d iterations.\n",iter);
-  for(int n=8; n<=128; n*=2) {
+  for(int n=8; n<=512; n*=2) {
     GPU_batch_test<double,Solver_type::CUSOLVER_EVJ_BATCH>(1, 1, n, type, true);
     GPU_batch_test<double,Solver_type::CUSOLVER_EVJ_BATCH>(iter, numBatch, n, type, false);
+  }
+#if CUSOLVER_VERSION > 11604
+  printf("\n");
+  printf(">> float cusolver HJ_64 acc_check and avarage of %d iterations.\n",iter);
+  for(int n=8; n<=512; n*=2) {
+    GPU_batch_test<float,Solver_type::CUSOLVER_EV_BATCH>(1, 1, n, type, true);
+    GPU_batch_test<float,Solver_type::CUSOLVER_EV_BATCH>(iter, numBatch, n, type, false);
+  }
+  printf("\n");
+  printf(">> double cusolver HJ_64 acc_check and avarage of %d iterations.\n",iter);
+  for(int n=8; n<=512; n*=2) {
+    GPU_batch_test<double,Solver_type::CUSOLVER_EV_BATCH>(1, 1, n, type, true);
+    GPU_batch_test<double,Solver_type::CUSOLVER_EV_BATCH>(iter, numBatch, n, type, false);
+  }
+#endif
+  printf("\n");
+  printf(">> float single cusolver D&C acc_check and avarage of %d iterations.\n",iter);
+  for(int n=8; n<=512; n*=2) {
+    GPU_batch_test<float,Solver_type::CUSOLVER_EVD>(1, 1, n, type, true);
+    GPU_batch_test<float,Solver_type::CUSOLVER_EVD>(iter, numBatch, n, type, false);
+  }
+  printf("\n");
+  printf(">> double single cusolver D&C acc_check and avarage of %d iterations.\n",iter);
+  for(int n=8; n<=512; n*=2) {
+    GPU_batch_test<double,Solver_type::CUSOLVER_EVD>(1, 1, n, type, true);
+    GPU_batch_test<double,Solver_type::CUSOLVER_EVD>(iter, numBatch, n, type, false);
   }
 #endif
 

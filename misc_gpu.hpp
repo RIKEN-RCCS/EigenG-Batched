@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
+#include <float.h>
 #include <type_traits>
 
 #if defined(__NVCC__)
@@ -27,7 +29,11 @@
 //       would be wrong in class inheritance or friendship.
 // 5.6.x prior is OK
 //
+#if HIP_VERSION<60000000
 #define COOPERATIVE_GROUP_STANDARD	0
+#else
+#define COOPERATIVE_GROUP_STANDARD	1
+#endif
 //
 //
 #endif
@@ -53,6 +59,24 @@ extern __shared__ __align__(sizeof(float)*4) char __shmem[];
 //	__CUDA_ARCH__	is on when nvcc targets to compile
 //			the device functions, and
 //	__HIPCC__	is on when hipcc compiler is used.
+
+//
+// Machine epsilon
+// to avoid the conflition to refere to std::numeric_limits<T>::epsilon()
+// in a CUDA device function
+//
+#if defined(__NVCC__)
+template < typename T > __host__ __device__
+T constexpr machine_epsilon() noexcept { return nextafter(T(1),T(2))-T(1); }
+template <> __host__ __device__
+double constexpr machine_epsilon <double> () noexcept { return DBL_EPSILON; }
+template <> __host__ __device__
+float constexpr machine_epsilon <float> () noexcept { return FLT_EPSILON; }
+#endif
+#if defined(__HIPCC__)
+template < typename T > __host__ __device__
+T constexpr machine_epsilon() noexcept { return std::numeric_limits<T>::epsilon(); }
+#endif
 
 __host__ __device__ __forceinline__
 double __Volatile__(const double x) {

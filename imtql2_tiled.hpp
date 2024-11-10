@@ -1,6 +1,4 @@
-#ifndef __HEADER_IMTQL2_TILED_HPP__
-#define __HEADER_IMTQL2_TILED_HPP__
-
+#pragma once
 
 template <class T, int tile_size>
 //__device__  __forceinline__ int
@@ -8,9 +6,9 @@ __device__  __noinline__ int
 imtql2_tiled_( const int nm, const int n,
                 T * __restrict__ w_, T * __restrict__ z_,
                 // optional arguments
-                int const MAX_SWEEP = 10,
-		T const tol = std::numeric_limits<T>::epsilon()*(std::is_same<T,double>::value?512:16),
-                bool const DO_SORT = false
+                int const max_sweep = 10,
+		T const tol = machine_epsilon<T>()*(std::is_same<T,double>::value?512:16),
+                bool const do_sort = (DO_SORT==1)
              )
 {
   sync_over_cg<T,tile_size>();
@@ -48,7 +46,7 @@ imtql2_tiled_( const int nm, const int n,
 
     int itr;
     #pragma unroll 1
-    for (itr=0; itr<=MAX_SWEEP; itr++) {
+    for (itr=0; itr<=max_sweep; itr++) {
 
       T * const d_ = shmem;
       T * const e_ = shmem + tile_size;
@@ -125,12 +123,12 @@ imtql2_tiled_( const int nm, const int n,
       }
 
     }
-    _if_ (itr>MAX_SWEEP) { ierror = l; break; }
+    _if_ (itr>max_sweep) { ierror = l; break; }
 
   } sync_over_cg<T,tile_size>();
 
 
-  _if_ ( DO_SORT ) {
+  _if_ ( do_sort ) {
     _if_ ( ierror == 0 ) {
       T * const d_ = shmem;
       int * const pos_ = (int *)(shmem + tile_size);
@@ -177,4 +175,3 @@ imtql2_tiled_( const int nm, const int n,
   return ierror;
 }
 
-#endif
