@@ -40,9 +40,11 @@ eigen_GPU_batch_get_Launch_params(const int L, const int n, int &grpSZ, int &num
 	 16 : ((n<=32) ?
 	 32 : WARP_GPU_SIZE )));
   // The number of ThreadBlocks to be invoked per SM
-  numTB = deviceProp.multiProcessorCount*12;
+//  numTB = deviceProp.multiProcessorCount*12;
+  numTB = deviceProp.multiProcessorCount*4;
   // The number of Thread per ThreadBlock
-  numTH = WARP_GPU_SIZE*8;
+//  numTH = WARP_GPU_SIZE*8;
+  numTH = WARP_GPU_SIZE*4;
   // The number of groups per ThreadBlock
   numGR = numTH/grpSZ;
   // The required shared memory size per ThreadBlock

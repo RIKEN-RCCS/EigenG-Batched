@@ -334,7 +334,8 @@ main(int argc, char* argv[])
   print_header("GPU-Batch-eigensolver", argc, argv);
 
   const int iter = 20;
-  const int numBatch = 512;
+//  const int numBatch = 512;
+  const int numBatch = 5000;
 //  const int numBatch = 16384*1;
 //  const Matrix_type type = Matrix_type::MATRIX_FRANK;
 //  const Matrix_type type = Matrix_type::MATRIX_LETKF;

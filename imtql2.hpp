@@ -6,7 +6,7 @@ __device__ __noinline__ int
 imtql2_( const int nm, const int n,
                 T * __restrict__ d_, T * __restrict__ e_, T * __restrict__ z_,
                 // optional arguments
-                int const max_sweep = 10,
+                int const max_sweep = 100,
                 T const tol = machine_epsilon<T>()*(std::is_same<T,double>::value?512:16),
                 bool const do_sort = (DO_SORT==1)
         )        
