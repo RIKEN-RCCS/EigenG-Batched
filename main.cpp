@@ -335,11 +335,11 @@ main(int argc, char* argv[])
 
   const int iter = 20;
 //  const int numBatch = 512;
-  const int numBatch = 5000;
+  const int numBatch = 1000;
 //  const int numBatch = 16384*1;
-//  const Matrix_type type = Matrix_type::MATRIX_FRANK;
+  const Matrix_type type = Matrix_type::MATRIX_FRANK;
 //  const Matrix_type type = Matrix_type::MATRIX_LETKF;
-  const Matrix_type type = Matrix_type::MATRIX_SYM_RAND;
+//  const Matrix_type type = Matrix_type::MATRIX_SYM_RAND;
 
 #if defined(__NVCC__)
   const int nums[] = { 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 23, 24, 25, 28, 31, 32, 33, 47, 48, 49, 63, 64, 65, 95, 96, 97, 127, 128, 129, 159, 160, 161, 191, 192, 193, 223, 224, 225, 255, 256, 257, 319, 320, 321, 511, 512, 0 };
@@ -350,7 +350,7 @@ main(int argc, char* argv[])
 #endif
 
 
-#if 1
+#if 0
   printf(">> float accuracy test\n");
   for(int i=0; nums[i] > 0; i++) { const int n = nums[i];
     GPU_batch_test<float,Solver_type::EIGENG_BATCH>(1, 1, n, type, true);

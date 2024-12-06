@@ -2,49 +2,47 @@
 
 #include <cusolverDn.h>
 
-#if 0
-void
-cusolver_test(int n, half *A, int lda, half *W, int batchSize)
-{
-}
-#endif
+#if CUSOLVER_VERSION > 11604
 
 void
-cusolver_test(int n, double *A, int lda, double *W, int batchSize)
+cusolver64_test(int n, double *A, int lda, double *W, int batchSize)
 {
-  cusolverDnHandle_t cusolverH = NULL;
+  cusolverDnHandle_t cusolverH;
   cusolverDnCreate(&cusolverH);
-  cudaStream_t stream = NULL; 
+  cudaStream_t stream; 
   cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
   cusolverDnSetStream(cusolverH, stream);
-  syevjInfo_t syevj_params = NULL;
-  cusolverDnCreateSyevjInfo(&syevj_params);
-  double constexpr EPS = (double)std::numeric_limits<double>::epsilon();
-  cusolverDnXsyevjSetTolerance(syevj_params,EPS*512);
-  cusolverDnXsyevjSetMaxSweeps(syevj_params,10);
-  cusolverDnXsyevjSetSortEig(syevj_params,0);
+  cusolverDnParams_t cusolver_params;
+  cusolverDnCreateParams(&cusolver_params);
 
   cusolverStatus_t err;
   cudaError_t status;
 
-  int lwork;
-  err = cusolverDnDsyevjBatched_bufferSize(
+  size_t lworkD;
+  size_t lworkH;
+  err = cusolverDnXsyevBatched_bufferSize(
     cusolverH,
+    cusolver_params,
     CUSOLVER_EIG_MODE_VECTOR,
     CUBLAS_FILL_MODE_UPPER,
-    n,
+    (int64_t)n,
+    CUDA_R_64F,
     A,
-    lda,
+    (int64_t)lda,
+    CUDA_R_64F,
     W,
-    &lwork,
-    syevj_params,
-    batchSize
+    CUDA_R_64F,
+    &lworkD,
+    &lworkH,
+    (int64_t)batchSize
     );
 
-  if ( err != CUSOLVER_STATUS_SUCCESS ) { return; }
+  if ( err != CUSOLVER_STATUS_SUCCESS ) {
+    printf("buffer query fault\n"); return;
+  }
 
-  double *d_work;
-  status = cudaMalloc((void**)&d_work, sizeof(double)*lwork);
+  void *d_work;
+  status = cudaMalloc((void**)&d_work, lworkD);
   if ( status != cudaSuccess || d_work == NULL ) {
     printf("work allocation fault\n"); return;
   }
@@ -54,26 +52,34 @@ cusolver_test(int n, double *A, int lda, double *W, int batchSize)
     cudaFree(d_work);
     printf("devinfo allocation fault\n"); return;
   }
+  void *h_work = (void *)malloc(lworkH);
 
-  err = cusolverDnDsyevjBatched(
+  err = cusolverDnXsyevBatched(
     cusolverH,
+    cusolver_params,
     CUSOLVER_EIG_MODE_VECTOR,
     CUBLAS_FILL_MODE_UPPER,
-    n,
+    (int64_t)n,
+    CUDA_R_64F,
     A,
-    lda,
+    (int64_t)lda,
+    CUDA_R_64F,
     W,
+    CUDA_R_64F,
     d_work,
-    lwork,
+    lworkD,
+    h_work,
+    lworkH,
     d_info,
-    syevj_params,
-    batchSize
+    (int64_t)batchSize
     );
 
   cudaFree(d_work);
+  free(h_work);
   int * info = (int *)malloc(sizeof(int)*batchSize);
   status = cudaMemcpy(info,d_info,sizeof(int)*batchSize,cudaMemcpyDeviceToHost);
   cudaFree(d_info);
+
   if ( err == CUSOLVER_STATUS_INVALID_VALUE ) {
     if ( info[0] < 0 ) {
         printf("[%06d]'s parameter was wrong.\n",-info[0]);
@@ -87,49 +93,50 @@ cusolver_test(int n, double *A, int lda, double *W, int batchSize)
   }
   free(info);
 
-  cusolverDnDestroySyevjInfo(syevj_params);
+  cusolverDnDestroyParams(cusolver_params);
   cusolverDnDestroy(cusolverH);
   cudaStreamDestroy(stream);
-
-  if ( err != CUSOLVER_STATUS_SUCCESS ) { return; }
 } 
 
 void
-cusolver_test(int n, float *A, int lda, float *W, int batchSize)
+cusolver64_test(int n, float *A, int lda, float *W, int batchSize)
 {
-  cusolverDnHandle_t cusolverH = NULL;
+  cusolverDnHandle_t cusolverH;
   cusolverDnCreate(&cusolverH);
-  cudaStream_t stream = NULL; 
+  cudaStream_t stream; 
   cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
   cusolverDnSetStream(cusolverH, stream);
-  syevjInfo_t syevj_params = NULL;
-  cusolverDnCreateSyevjInfo(&syevj_params);
-  double constexpr EPS = (double)std::numeric_limits<float>::epsilon();
-  cusolverDnXsyevjSetTolerance(syevj_params,EPS*16);
-  cusolverDnXsyevjSetMaxSweeps(syevj_params,10);
-  cusolverDnXsyevjSetSortEig(syevj_params,0);
+  cusolverDnParams_t cusolver_params;
+  cusolverDnCreateParams(&cusolver_params);
 
   cusolverStatus_t err;
   cudaError_t status;
 
-  int lwork;
-  err = cusolverDnSsyevjBatched_bufferSize(
+  size_t lworkD;
+  size_t lworkH;
+  err = cusolverDnXsyevBatched_bufferSize(
     cusolverH,
+    cusolver_params,
     CUSOLVER_EIG_MODE_VECTOR,
-    CUBLAS_FILL_MODE_LOWER,
-    n,
+    CUBLAS_FILL_MODE_UPPER,
+    (int64_t)n,
+    CUDA_R_32F,
     A,
-    lda,
+    (int64_t)lda,
+    CUDA_R_32F,
     W,
-    &lwork,
-    syevj_params,
-    batchSize
+    CUDA_R_32F,
+    &lworkD,
+    &lworkH,
+    (int64_t)batchSize
     );
 
-  if ( err != CUSOLVER_STATUS_SUCCESS ) { return; }
+  if ( err != CUSOLVER_STATUS_SUCCESS ) {
+    printf("buffer query fault\n"); return;
+  }
 
-  float *s_work;
-  status = cudaMalloc((void**)&s_work, sizeof(float)*lwork);
+  void *s_work;
+  status = cudaMalloc((void**)&s_work, lworkD);
   if ( status != cudaSuccess || s_work == NULL ) {
     printf("work allocation fault\n"); return;
   }
@@ -139,23 +146,30 @@ cusolver_test(int n, float *A, int lda, float *W, int batchSize)
     cudaFree(s_work);
     printf("devinfo allocation fault\n"); return;
   }
+  void *h_work = (void *)malloc(lworkH);
 
-  err = cusolverDnSsyevjBatched(
+  err = cusolverDnXsyevBatched(
     cusolverH,
+    cusolver_params,
     CUSOLVER_EIG_MODE_VECTOR,
-    CUBLAS_FILL_MODE_LOWER,
-    n,
+    CUBLAS_FILL_MODE_UPPER,
+    (int64_t)n,
+    CUDA_R_32F,
     A,
-    lda,
+    (int64_t)lda,
+    CUDA_R_32F,
     W,
+    CUDA_R_32F,
     s_work,
-    lwork,
+    lworkD,
+    h_work,
+    lworkH,
     s_info,
-    syevj_params,
-    batchSize
+    (int64_t)batchSize
     );
 
   cudaFree(s_work);
+  free(h_work);
   int * info = (int *)malloc(sizeof(int)*batchSize);
   status = cudaMemcpy(info,s_info,sizeof(int)*batchSize,cudaMemcpyDeviceToHost);
   cudaFree(s_info);
@@ -166,19 +180,18 @@ cusolver_test(int n, float *A, int lda, float *W, int batchSize)
     }
   } else {
     for(int i=0;i<batchSize;i++){
-      if(info[i]!=0) {
+      if(info[i]==n+1) {
         printf("[%06d] Gave up the iteration.\n",i); break;
       }
     }
   }
   free(info);
 
-  cusolverDnDestroySyevjInfo(syevj_params);
+  cusolverDnDestroyParams(cusolver_params);
   cusolverDnDestroy(cusolverH);
   cudaStreamDestroy(stream);
-
-  if ( err != CUSOLVER_STATUS_SUCCESS ) { return; }
 } 
 
+#endif
 #endif
 

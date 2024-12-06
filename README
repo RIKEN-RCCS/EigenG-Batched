@@ -2,6 +2,10 @@
 EigenG-Batched
 
 0. Revision Histrory
+  Version 1.6.1 (2024.12.06) ::
+    Includes a new test function of cusolverDnXsyevBatched, which
+    has been supported since CUDA 12.6.3.
+
   Version 1.6 (2024.11.20) ::
     Sorting option has been fixed (#define DO_SORT 1).
     Confirmed to perform on CUDA 12.6, Rocm 6.2, or priors.

@@ -3,7 +3,7 @@
 template <class T, int tile_size>
 //__device__  __forceinline__ void
 __device__  __noinline__ void
-hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict__ z_)
+hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict__ z_, const bool do_sort = (DO_SORT == 1) )
 {
   sync_over_cg<T,tile_size>();
   const int myid = threadIdx.x % tile_size + 1;
@@ -212,16 +212,11 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
 
 
   _if_ (myid <= n) {
-#if DO_SORT
   int * pos_ = (int *)(shmem + tile_size);
-#endif
   for(int i=1; i<=n; i++) {
     T * aa_ = &a(myid,i);
-#if DO_SORT
-    T * zz_ = &z(myid,pos(i));
-#else
-    T * zz_ = &z(myid,i);
-#endif
+    const int col = do_sort ? pos(i) : i;
+    T * zz_ = &z(myid,col);
     *aa_ = *zz_;
   }}
 

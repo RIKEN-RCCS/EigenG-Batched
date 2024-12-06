@@ -3,10 +3,10 @@
 template <class T, unsigned tile_size>
 __device__ __noinline__ void
 //__device__ __forceinline__ void
-//hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T * __restrict__ u_, T * __restrict__ v_ )
-hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb_, T * __restrict__ u_, T * __restrict__ v_ )
+hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T * __restrict__ u_, T * __restrict__ v_ )
+//hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb_, T * __restrict__ u_, T * __restrict__ v_ )
 {
-  const int mb = 1;
+//  const int mb = 1;
   sync_over_cg<T,tile_size>();
   const unsigned myid = (unsigned)threadIdx.x % tile_size + 1;
 #define a(row,col)      (*(a_+((row)-1)+((col)-1)*nm))

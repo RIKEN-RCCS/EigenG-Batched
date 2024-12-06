@@ -198,24 +198,30 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
     const int i2 = i0 + m1 - 1;
     const int mm = m0 - m1 + 1;
     const int BLK_J = 3;
+//    const int BLK_J = 4;
     const int BLK_K = 3;
+//    const int BLK_K = 4;
+//    const int BLK_M = 2;
+//    const int BLK_M = 3;
     const int BLK_M = 4;
+//    const int BLK_M = 8;
 #pragma unroll 1
     for(int k0=1; k0<=i2; k0+=YDIM*BLK_K) { int k=k0+BLK_K*(yid-1);
 #pragma unroll 1
     for(int j0=1; j0<=i2; j0+=XDIM*BLK_J) { int j=j0+BLK_J*(xid-1);
     _if_ (j0+1<=k0+YDIM*BLK_K) {
 
-      T ajk[BLK_J][BLK_K];
+//      T ajk[BLK_J][BLK_K];
+      T ajk[BLK_K][BLK_J];
       for(int K=0;K<BLK_K;K++){
       for(int J=0;J<BLK_J;J++){
-        ajk[J][K] = ZERO;
+        ajk[K][J] = ZERO;
       }}
       for(int K=0;K<BLK_K;K++){
       _if_(k+K<=i2) {
       for(int J=0;J<BLK_J;J++){
       _if_(j+J<=k+K) {
-        ajk[J][K]= a(j+J,k+K);
+        ajk[K][J]= a(j+J,k+K);
       }}}} 
 
       T *ujm = &u(j,m1);
@@ -223,47 +229,54 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
       T *ukm = &u(k,m1);
       T *vkm = &v(k,m1);
 
-      T uj[BLK_J][BLK_M], uk[BLK_K][BLK_M], vj[BLK_J][BLK_M], vk[BLK_K][BLK_M];
+//      T uj[BLK_J][BLK_M], uk[BLK_K][BLK_M], vj[BLK_J][BLK_M], vk[BLK_K][BLK_M];
+      T uj[BLK_M][BLK_J], uk[BLK_M][BLK_K], vj[BLK_M][BLK_J], vk[BLK_M][BLK_K];
 
 #if defined(__NVCC__)
       asm volatile ("//--open");
 #endif
 #pragma unroll 1
       for(int m=m1; m<=m1+(mm%BLK_M)-1; m++) {
-          for(int M=0;M<1;M++){
-          for(int K=0;K<BLK_K;K++){
-            uk[K][M] = ukm[K];
-            vk[K][M] = vkm[K];
+          {int M=0;
           for(int J=0;J<BLK_J;J++){
-          _if_(K==0){
-            uj[J][M] = ujm[J];
-            vj[J][M] = vjm[J];
+            uj[M][J] = ujm[J];
+            vj[M][J] = vjm[J];
+          } ujm+=nm; vjm+=nm;
+          for(int K=0;K<BLK_K;K++){
+            uk[M][K] = ukm[K];
+            vk[M][K] = vkm[K];
+	  } ukm+=nm; vkm+=nm;
           }
-            ajk[J][K] = ajk[J][K]
-                      + uj[J][M] * vk[K][M] + vj[J][M] * uk[K][M];
-          }}
-          ujm+=nm; vjm+=nm;
-          ukm+=nm; vkm+=nm;
-          }
+          {int M=0;
+          for(int K=0;K<BLK_K;K++){
+          for(int J=0;J<BLK_J;J++){
+            ajk[K][J] = ajk[K][J]
+                      + uj[M][J] * vk[M][K] + vj[M][J] * uk[M][K];
+          }}}
       }
+
+#if defined(__NVCC__)
+      asm volatile ("//--mid");
+#endif
 
 #pragma unroll 1
       for(int m=m1+(mm%BLK_M); m<=m0; m+=BLK_M) {
           for(int M=0;M<BLK_M;M++){
-          for(int K=0;K<BLK_K;K++){
-            uk[K][M] = ukm[K];
-            vk[K][M] = vkm[K];
           for(int J=0;J<BLK_J;J++){
-          _if_(K==0){
-            uj[J][M] = ujm[J];
-            vj[J][M] = vjm[J];
-          }
-            ajk[J][K] = ajk[J][K]
-                      + uj[J][M] * vk[K][M] + vj[J][M] * uk[K][M];
-          }}
-          ujm+=nm; vjm+=nm;
-          ukm+=nm; vkm+=nm;
-          }
+            uj[M][J] = ujm[J];
+            vj[M][J] = vjm[J];
+	  } ujm+=nm; vjm+=nm; }
+          for(int M=0;M<BLK_M;M++){
+          for(int K=0;K<BLK_K;K++){
+            uk[M][K] = ukm[K];
+            vk[M][K] = vkm[K];
+	  } ukm+=nm; vkm+=nm; }
+          for(int M=0;M<BLK_M;M++){
+          for(int K=0;K<BLK_K;K++){
+          for(int J=0;J<BLK_J;J++){
+            ajk[K][J] = ajk[K][J]
+                      + uj[M][J] * vk[M][K] + vj[M][J] * uk[M][K];
+          }}}
       }
 #if defined(__NVCC__)
       asm volatile ("//--close");
@@ -273,7 +286,7 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
       _if_(k+K<=i2) {
       for(int J=0;J<BLK_J;J++){
       _if_(j+J<=k+K) {
-        a(j+J,k+K) = ajk[J][K];
+        a(j+J,k+K) = ajk[K][J];
       }}}}
     }}}}
     sync_over_warp();

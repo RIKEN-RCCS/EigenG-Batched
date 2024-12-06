@@ -1,13 +1,13 @@
 #define	TIMER		0
 #if defined(__NVCC__)
-#define	USE_IMTQL	1
-#define DO_PREFETCH	1
+#define	USE_IMTQL	0
+#define DO_PREFETCH	0
 #define	DO_SORT		1
 #endif
 #if defined(__HIPCC__)
 #define	USE_IMTQL	0
 #define DO_PREFETCH	0
-#define	DO_SORT		0
+#define	DO_SORT		1
 #endif
 #include "gpu_arch.h"
 
@@ -152,6 +152,8 @@ eigen_GPU_batch_(const int L, const int nm, const int n, const int m, T *a_, T *
 
 #if TIMER
   unsigned long t0, t1, t2, t3;
+  unsigned long s0 = 0, s1 = 0, s2 = 0;
+  unsigned long done = 0;
 #endif
 
   a  = a_  + pos*len;
@@ -171,13 +173,17 @@ eigen_GPU_batch_(const int L, const int nm, const int n, const int m, T *a_, T *
 #if TIMER
     t0 = __global_timer__();
 #endif
-//    const int mb=3; // 3*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
-    const int mb=4; // 3*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
-    T * u_=wk+0*nm*(mb+1); // mb*nm+max(BLK_J,BLK_K)
-    T * v_=wk+1*nm*(mb+1); // mb*nm+max(BLK_J,BLK_K)
+    // n >= 33 --> mb <= min(16,34/2-1) = 16
+//    const int mb=2; // 2*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
+//    const int mb=3; // 2*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
+//    const int mb=4; // 2*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
+    const int mb=16; // 2*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
+    T * u_=wk+0*nm*(mb+1); // < mb*nm+max(BLK_J,BLK_K)
+    T * v_=wk+1*nm*(mb+1); // < mb*nm+max(BLK_J,BLK_K)
     if(run) hhsy2tr_ (nm, n, a, w, e, mb, u_, v_);
 #if TIMER
     t1 = __global_timer__();
+    s0 = s0 + (t1 - t0);
 #endif
     int return_flag = false;
 #if USE_IMTQL
@@ -188,14 +194,13 @@ eigen_GPU_batch_(const int L, const int nm, const int n, const int m, T *a_, T *
     if ( return_flag ) break;
 #if TIMER
     t2 = __global_timer__();
+    s1 = s1 + (t2 - t1);
 #endif
-    if(run) hhtr2sy_ (nm, n, a, m, wk
-#if DO_SORT
-                             , (int*)e
-#endif
-		                       );
+    if(run) hhtr2sy_ (nm, n, a, m, wk, DO_SORT ? (int*)e : nullptr);
 #if TIMER
     t3 = __global_timer__();
+    s2 = s2 + (t3 - t2);
+    done++;
 #endif
 
     a += len*step; w += n*step;
@@ -204,15 +209,15 @@ eigen_GPU_batch_(const int L, const int nm, const int n, const int m, T *a_, T *
 #if TIMER
   if (pos==0 && myid == 0) {
     double t;
-    t = (double)(t1-t0);
-    printf("TRED1  : %le [ns]: %le [GFLOPS]: %le [GB/s]\n",
-		       t, 4.*n*n*n/3/t, (double)sizeof(T)*n*n/2/t);
-    t = (double)(t2-t1);
-    printf("TQL2   : %le [ns]: %le [GFLOPS]: %le [GB/s]\n",
-		       t, 0., (double)sizeof(T)*n*(n+2)/t);
-    t = (double)(t3-t2);
-    printf("TRBAK1 : %le [ns]: %le [GFLOPS]: %le [GB/s]\n",
-		       t, 2.*n*n*n/t, (double)sizeof(T)*3*n*n/2/t);
+    t = (double)s0*1e-9;
+    printf("TRED1  : %le [s]: %le [GFLOPS]: %le [GB/s]\n",
+		       t, 1e-9*done*4.*n*n*n/3/t, 1e-9*(double)done*sizeof(T)*n*n/2/t);
+    t = (double)s1*1e-9;
+    printf("TQL2   : %le [s]: %le [GFLOPS]: %le [GB/s]\n",
+		       t, 1e-9*done*0., 1e-9*(double)done*sizeof(T)*n*(n+2)/t);
+    t = (double)s2*1e-9;
+    printf("TRBAK1 : %le [s]: %le [GFLOPS]: %le [GB/s]\n",
+		       t, 1e-9*done*2.*n*n*n/t, 1e-9*(double)done*sizeof(T)*3*n*n/2/t);
   }
 #endif
 }

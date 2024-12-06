@@ -3,11 +3,7 @@
 template <class T>
 __device__ __noinline__ void
 //__device__ __forceinline__ void
-hhtr2sy_( const int nm, const int n, T * __restrict__ a_, const int m, T * __restrict__ z_
-#if DO_SORT
-, int * __restrict__ pos_
-#endif
-)
+hhtr2sy_( const int nm, const int n, T * __restrict__ a_, const int m, T * __restrict__ z_, int * __restrict__ pos_ = nullptr )
 {
   const int myid = threadIdx.x % WARP_GPU_SIZE + 1;
 #define a(row,col)      (*(a_+((row)-1)+((col)-1)*nm))
@@ -42,8 +38,10 @@ hhtr2sy_( const int nm, const int n, T * __restrict__ a_, const int m, T * __res
   const int BLK_I = (std::is_same<T,float>::value) ? 5 : 4;
   const int BLK_J = (std::is_same<T,float>::value) ? 4 : 3;
 #else
-  const int BLK_I = (std::is_same<T,float>::value) ? 4 : 3;
-  const int BLK_J = (std::is_same<T,float>::value) ? 4 : 3;
+//  const int BLK_I = (std::is_same<T,float>::value) ? 4 : 3;
+//  const int BLK_J = (std::is_same<T,float>::value) ? 4 : 3;
+  const int BLK_I = (std::is_same<T,float>::value) ? 6 : 4;
+  const int BLK_J = (std::is_same<T,float>::value) ? 6 : 4;
 #endif
   const int ii = (n-1)%BLK_I + 1;
 
@@ -208,11 +206,8 @@ hhtr2sy_( const int nm, const int n, T * __restrict__ a_, const int m, T * __res
   #pragma unroll 1
   for(int i=1; i<=n; i++) {
     T * aa_ = &a(myid,i);
-#if DO_SORT
-    T * zz_ = &z(myid,pos(i));
-#else
-    T * zz_ = &z(myid,i);
-#endif
+    int const col = ( pos_!=nullptr ? pos(i) : i );
+    T * zz_ = &z(myid,col);
     for (int j=myid; j<=n; j+=WARP_GPU_SIZE) {
       *aa_ = *zz_;
       aa_ +=WARP_GPU_SIZE; zz_ +=WARP_GPU_SIZE;
