@@ -2,6 +2,9 @@
 EigenG-Batched
 
 0. Revision Histrory
+  Version 1.6.2 (2025.02.01) ::
+    CUDA 12.8 support, and some tweaks of source-codes
+
   Version 1.6.1 (2024.12.06) ::
     Includes a new test function of cusolverDnXsyevBatched, which
     has been supported since CUDA 12.6.3.

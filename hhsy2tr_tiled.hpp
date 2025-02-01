@@ -7,7 +7,7 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T *
 //hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb_, T * __restrict__ u_, T * __restrict__ v_ )
 {
 //  const int mb = 1;
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
   const unsigned myid = (unsigned)threadIdx.x % tile_size + 1;
 #define a(row,col)      (*(a_+((row)-1)+((col)-1)*nm))
 #define u(row,col)      (*(u_+((row)-1)+((col)-1)*nm))
@@ -38,7 +38,7 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T *
       a(1,2) = 2*t;
       e(1) = -t;
       e(2) = ZERO;
-    } sync_over_cg<T,tile_size>();
+    } sync_on_cg<T,tile_size>();
     return;
   }
 
@@ -79,7 +79,7 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T *
         _if_ (myid==i) { d(myid) = u_myid; }
         u_myid = __MASK__(u_myid,fff);
         T anorm = u_myid * u_myid;
-        sum_over_cg<T,tile_size>(anorm);
+        sum_on_cg<T,tile_size>(anorm);
 
 	T ul = u_myid - (anorm = - Sign(Sqrt(anorm), u_myid));
         //beta = __MASK__(ONE, anorm != ZERO) / flip0to1(ul * anorm);
@@ -88,7 +88,7 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T *
         __UPDATE__(el, anorm, ggg);
         __UPDATE__(u_myid, ul, ggg);
         _if_ (eee) { um(myid) = u_myid; }
-      } bcast_over_cg<T,tile_size>(beta,l);
+      } bcast_on_cg<T,tile_size>(beta,l);
 
 
       // v := (UV + VU) * u
@@ -103,7 +103,7 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T *
           T f = vk * u_myid;
           const T uk = __MASK__(*uk_,fff);
           T g = uk * u_myid;
-          sum2_over_cg<T,tile_size>(f,g);
+          sum2_on_cg<T,tile_size>(f,g);
           v_myid = v_myid + f*uk + g*vk;
           uk_ -= nm;
           vk_ -= nm;
@@ -134,7 +134,7 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T *
           const T vk0 = ajk0 * __MASK__(u_myid, fff);
           const T vk1 = ajk1 * u_myid;
 
-          const T vkk = red2_over_cg<T,tile_size>(vk0, vk1, -km);
+          const T vkk = red2_on_cg<T,tile_size>(vk0, vk1, -km);
           v_myid += vkk;
         }
       }
@@ -144,13 +144,13 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T *
       {
         v_myid *= beta;
         T alpha = v_myid * u_myid;
-        sum_over_cg<T,tile_size>(alpha);
+        sum_on_cg<T,tile_size>(alpha);
         alpha *= (beta * static_cast<T>(0.5));
         v_myid += alpha * u_myid;
         _if_ ( fff ) { vm(myid) = v_myid; }
       }
 
-    } sync_over_cg<T,tile_size>();
+    } sync_on_cg<T,tile_size>();
 
     
     const unsigned XDIM = (tile_size<=8)?2:4;
@@ -245,7 +245,7 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T *
         a(j+J,k+K) = ajk[J][K];
       }}}}
     }}}}
-    sync_over_cg<T,tile_size>();
+    sync_on_cg<T,tile_size>();
 
     {
       T *a_ptr = &a(myid,i0+m0);
@@ -263,7 +263,7 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T *
   _if_ (myid<=n) {
     e(myid) = el;
   }
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
 
   _if_ (myid==1) {
     d(1) = a(1,1);
@@ -283,6 +283,6 @@ hhsy2tr_tiled_(const int nm, const int n, T * __restrict__ a_, const int mb, T *
 #undef vm
 #undef uk
 #undef vk
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
 }
 

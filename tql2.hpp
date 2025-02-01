@@ -36,7 +36,7 @@ tql2_( const int nm, const int n,
   #pragma unroll 1
   for(int i=myid; i<=n; i+=WARP_GPU_SIZE) {
     z(i, i) = ONE;
-  } sync_over_warp();
+  } sync_on_warp();
 
   T shift = ZERO;
   T tst1 = ZERO;
@@ -46,7 +46,7 @@ tql2_( const int nm, const int n,
 
     tst1 = Max(tst1, (Abs(d(l)) + Abs(e(l)))*tol);
 
-    sync_over_warp();
+    sync_on_warp();
 
     int m = 1;
     _if_ (myid == 1) {
@@ -55,7 +55,7 @@ tql2_( const int nm, const int n,
         const T tst2 = Abs(e(m));
         _if_ (tst2 <= tst1) break;
       }
-    } bcast_over_warp(m,1);
+    } bcast_on_warp(m,1);
 
     _if_ (m != l) { // non-isolated diagonal
 
@@ -65,7 +65,7 @@ tql2_( const int nm, const int n,
 
 	T dl1;
         T delta_d;
-        sync_over_warp(); {
+        sync_on_warp(); {
           const T dl_old = d(l);
           const T el = e(l);
           const T p = Div(d(l+1) - dl_old, el + el);
@@ -75,11 +75,11 @@ tql2_( const int nm, const int n,
                   dl1 = el * psr;
                   _if_ (myid==1) { d(l) = dl; d(l+1) = dl1; }
                   delta_d = dl_old - dl;
-        } sync_over_warp();
+        } sync_on_warp();
 
         for(int i=l+1+myid; i<=n; i+=WARP_GPU_SIZE) {
           d(i) -= delta_d;
-        } sync_over_warp();
+        } sync_on_warp();
         shift += delta_d;
 
         T c = ONE;
@@ -119,25 +119,25 @@ tql2_( const int nm, const int n,
             const T di1 = h + s * (c * g + s * di);
 
 #if 0
-            sync_over_warp();
+            sync_on_warp();
 	    _if_ (i0-i==myid-1) {
               e(i + 1) = ei1; d(i + 1) = di1;
 	      c_tmp[myid-1] = c; s_tmp[myid-1] = s;
-            } sync_over_warp();
+            } sync_on_warp();
 #else
 	    _if_ (i0-i==myid-1) {
               ee = ei1; dd = di1; cc = c; ss = s;
             }
 #endif
 
-	  } sync_over_warp();
+	  } sync_on_warp();
 #if 0
 #else
 	  _if_ (i0-i1>=myid-1) {
             int i = i0 - (myid - 1);
             e(i + 1) = ee; d(i + 1) = dd;
 	    c_tmp[myid-1] = cc; s_tmp[myid-1] = ss;
-	  } sync_over_warp();
+	  } sync_on_warp();
 #endif
 
           for(int i=i0; i>=i1; i--) {
@@ -151,7 +151,7 @@ tql2_( const int nm, const int n,
               *zki0_ptr = c * h0 - s * h1;
               zki0_ptr+=WARP_GPU_SIZE; zki1_ptr+=WARP_GPU_SIZE;
             }
-          } sync_over_warp();
+          } sync_on_warp();
 
         }
 
@@ -159,21 +159,21 @@ tql2_( const int nm, const int n,
           const T r = Div(-s * s2 * c3 * el1 * e(l), dl1);
           e(l) = s * r;
           d(l) = c * r;
-        } sync_over_warp();
+        } sync_on_warp();
 
 	{
           const T tst2 = Abs(e(l));
           _if_(tst2 <= tst1) break;
         }
 
-      } sync_over_warp();
+      } sync_on_warp();
       _if_ (itr>=max_sweep) { ierror = l; break; }
 
     }
 
     _if_ (myid==1) {
       d(l) += shift;
-    } sync_over_warp();
+    } sync_on_warp();
 
   }
 
@@ -182,7 +182,7 @@ tql2_( const int nm, const int n,
       int * const pos_ = (int *)e_;
       for(int i=myid; i<=n; i+=WARP_GPU_SIZE) {
         pos(i) = i;
-      } sync_over_warp();
+      } sync_on_warp();
       #pragma unroll 1
       for(int i=2; i<=n; i++) {
         const int l = i - 1;
@@ -201,14 +201,14 @@ tql2_( const int nm, const int n,
             d(il)=d(l); d(l)=dl;
           }
         }
-      } sync_over_warp();
+      } sync_on_warp();
     }
   }
 
 #undef	z
 #undef	d
 #undef	e
-  sync_over_warp();
+  sync_on_warp();
   return ierror;
 }
 

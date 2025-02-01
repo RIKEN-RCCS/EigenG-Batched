@@ -5,7 +5,7 @@ __device__ __noinline__ void
 //__device__ __forceinline__ void
 hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T * __restrict__ e_, const int mb, T * __restrict__ u_, T * __restrict__ v_)
 {
-  sync_over_warp();
+  sync_on_warp();
   const int myid = threadIdx.x % WARP_GPU_SIZE + 1;
 #define a(row,col)      (*(a_+((row)-1)+((col)-1)*nm))
 #define u(row,col)      (*(u_+((row)-1)+((col)-1)*nm))
@@ -35,7 +35,7 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
       a(1,2) = 2*t;
       e(1) = -t;
       e(2) = ZERO;
-    } sync_over_warp();
+    } sync_on_warp();
     return;
   }
 
@@ -80,7 +80,7 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
 	{ int k=m+myid; _if_ ( k<=m0 ) {
           ui_[k-1] = u(i,k);
           vi_[k-1] = v(i,k);
-	}} sync_over_warp();
+	}} sync_on_warp();
         T anorm = ZERO;
         for(int j=myid; j<=i; j+=WARP_GPU_SIZE) {
           T uj = um(j) = a(j,i);
@@ -91,7 +91,7 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
           um(j) = uj;
           uj = __MASK__(uj, j<=l);
           anorm = anorm + uj * uj;
-        } sum_over_warp(anorm);
+        } sum_on_warp(anorm);
         _if_ ( myid == 1 ) {
           d(i) = um(i);
           um(i) = ZERO;
@@ -100,7 +100,7 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
           um(l) = ul = ul - anorm;
           //beta = __MASK__(ONE, anorm != ZERO) / flip0to1(ul * anorm);
           beta = Reciprocal(flip0to1(ul * anorm));
-        } bcast_over_warp(beta,1);
+        } bcast_on_warp(beta,1);
       }
 
 
@@ -118,7 +118,7 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
             g = g + (*uk_) * h;
             uk_ += WARP_GPU_SIZE; vk_ += WARP_GPU_SIZE; uu_ += WARP_GPU_SIZE;
           }
-        } sum2_over_warp(f,g);
+        } sum2_on_warp(f,g);
 #pragma unroll 1
         for(int k=m0-1; k>=m+1; k--) {
           const T ff = f;
@@ -137,7 +137,7 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
             z = z + ff * (*(uk_+nm)) + gg * (*(vk_+nm));
             *vv_ = z;
             uk_ += WARP_GPU_SIZE; vk_ += WARP_GPU_SIZE; uu_ += WARP_GPU_SIZE; vv_ += WARP_GPU_SIZE;
-          } sum2_over_warp(f,g);
+          } sum2_on_warp(f,g);
         }
         {
           T *uk_ = &u(myid,m+1);
@@ -158,7 +158,7 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
       _if_ (lx1){ T vj = a(1,1) * um(1); _if_(myid==lx1) { vm(1) += vj; }}
 #pragma unroll 1
       for(int k=1+lx1; k<=l; k+=2) {
-       	sync_over_warp();
+       	sync_on_warp();
         T * aj0 = &a(myid,k+0);
         const T uk0 = um(k+0);
         const T uk1 = um(k+1);
@@ -174,8 +174,8 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
           _if_ (km<=0) { vm(j) = vjj; }
           vk0 += ajk0 * __MASK__(uj, km<=-1);
           vk1 += ajk1 * uj;
-        } red2_over_warp(vk0,vk1);
-        _if_ (myid<=2) { vm(k+myid-1) += vk0; }
+        } T const vkk = red2_on_warp(vk0,vk1,myid-1);
+        _if_ (myid<=2) { vm(k+myid-1) += vkk; }
       }
 
 
@@ -185,11 +185,11 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
         const T f = vm(j) * beta;
         alpha = alpha + f * um(j);
         vm(j) = f;
-      } sum_over_warp(alpha);
+      } sum_on_warp(alpha);
       alpha *= (beta * static_cast<T>(0.5));
       for(int j=myid; j<=l; j+=WARP_GPU_SIZE) {
         vm(j) = vm(j) + alpha * um(j);
-      } sync_over_warp();
+      } sync_on_warp();
     }
 
     
@@ -289,7 +289,7 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
         a(j+J,k+K) = ajk[K][J];
       }}}}
     }}}}
-    sync_over_warp();
+    sync_on_warp();
 
 #pragma unroll 1
     for(int m=m0; m>=m1; m--) {
@@ -300,13 +300,13 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
     }
 
   }
-  sync_over_warp();
+  sync_on_warp();
 
   _if_ (myid==1) {
     d(1) = a(1,1);
     e(n) = ZERO;
   }
-  sync_over_warp();
+  sync_on_warp();
 
   for(int j=myid+1; j<=n; j+=WARP_GPU_SIZE) {
     a(j,j) = e(j-1);
@@ -322,6 +322,6 @@ hhsy2tr_(const int nm, const int n, T * __restrict__ a_, T * __restrict__ d_, T 
 #undef vm
 #undef uk
 #undef vk
-  sync_over_warp();
+  sync_on_warp();
 }
 

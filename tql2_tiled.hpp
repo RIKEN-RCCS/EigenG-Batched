@@ -9,7 +9,7 @@ tql2_tiled_( const long nm, const int n,
                 bool const do_sort = (DO_SORT==1)
            )
 {
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
   const int myid = threadIdx.x % tile_size + 1;
 #define	z(row,col)	(*(z_+((row)-1)+((col)-1)*nm))
 #define	w(index)	(*(w_+((index)-1)))
@@ -35,7 +35,7 @@ tql2_tiled_( const long nm, const int n,
       z(myid, i) = ZERO;
     }
     z(myid, myid) = ONE;
-  } sync_over_cg<T,tile_size>();
+  } sync_on_cg<T,tile_size>();
 
   T shift = ZERO;
   T tst1 = ZERO;
@@ -52,7 +52,7 @@ tql2_tiled_( const long nm, const int n,
       m = min(l+myid-1,n);
       const T tst2 = Abs(e(m));
       m = (tst2 <= tst1 ? m : n+1);
-      min_over_cg<int,tile_size>(m);
+      min_on_cg<int,tile_size>(m);
     }
     _if_ (m != l) { // non-isolated diagonal
 
@@ -72,11 +72,11 @@ tql2_tiled_( const long nm, const int n,
 		  dl1 = el * psr;
                   _if_ (myid==1) { d(l) = dl; d(l+1) = dl1; }
                   delta_d = dl_old - dl;
-        } sync_over_cg<T,tile_size>();
+        } sync_on_cg<T,tile_size>();
 
         _if_ ( l+2 <= myid && eee ) { //myid <= n ) {
           d(myid) -= delta_d;
-        } sync_over_cg<T,tile_size>();
+        } sync_on_cg<T,tile_size>();
         shift += delta_d;
 
         T c = ONE;
@@ -109,7 +109,7 @@ tql2_tiled_( const long nm, const int n,
           c = Div(p, r);
           p = c * di - s * g;
           const T di1 = h + s * (c * g + s * di);
-	  sync_over_cg<int,tile_size>();
+	  sync_on_cg<int,tile_size>();
           _if_ (myid==1) { e(i+1) = ei1; d(i+1) = di1; }
 
 	  T * aki0_ptr = aki1_ptr - nm;
@@ -127,21 +127,21 @@ tql2_tiled_( const long nm, const int n,
           const T r = Div(-s * s2 * c3 * el1 * ei, dl1);
           e(l) = s * r;
           d(l) = c * r;
-	} sync_over_cg<int,tile_size>();
+	} sync_on_cg<int,tile_size>();
 
         {
           const T tst2 = Abs(e(l));
           _if_ (tst2 <= tst1) break;
         }
 
-      } sync_over_cg<T,tile_size>();
+      } sync_on_cg<T,tile_size>();
       _if_ (itr>=max_sweep) { ierror = l; break; }
 
     }
 
     _if_ (myid==1) {
       d(l) += shift;
-    } sync_over_cg<T,tile_size>();
+    } sync_on_cg<T,tile_size>();
 
   }
 
@@ -152,7 +152,7 @@ tql2_tiled_( const long nm, const int n,
       int * const pos_ = (int *)(shmem + tile_size);
       if (myid<=n) {
         pos(myid) = myid;
-      } sync_over_cg<T,tile_size>();
+      } sync_on_cg<T,tile_size>();
       for (int i=2; i<=n; i++) {
         const int l = i - 1;
         // find minimum element in [l:n] and set it on pos(l)
@@ -171,7 +171,7 @@ tql2_tiled_( const long nm, const int n,
           }
         }
       }
-      sync_over_cg<T,tile_size>();
+      sync_on_cg<T,tile_size>();
     }
   }
   _if_ (myid<=n) {
@@ -187,7 +187,7 @@ tql2_tiled_( const long nm, const int n,
 #undef	d
 #undef	e
 #undef	pos
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
   return ierror;
 }
 

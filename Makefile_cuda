@@ -18,7 +18,18 @@ NVCCOPT=\
                 --generate-code arch=compute_80,code=sm_80 \
                 --generate-code arch=compute_86,code=sm_86 \
                 --generate-code arch=compute_89,code=sm_89 \
-                --generate-code arch=compute_90,code=sm_90 \
+                --generate-code arch=compute_90,code=sm_90 
+
+ifneq (x$(shell nvcc --version 2>&1|grep "release 12\.8"),x)
+NVCCOPT:= $(NVCCOPT) \
+		--generate-code arch=compute_100,code=sm_100 \
+		--generate-code arch=compute_100,code=compute_100
+else
+NVCCOPT:= $(NVCCOPT) \
+		--generate-code arch=compute_90,code=compute_90
+endif
+
+NVCCOPT:= $(NVCCOPT) \
 		--extra-device-vectorization \
 		--restrict \
 		--ptxas-options='--allow-expensive-optimizations true' \

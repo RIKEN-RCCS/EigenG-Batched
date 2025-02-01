@@ -4,7 +4,7 @@ template <class T, int tile_size>
 __device__ __noinline__ void
 jac_tiled( T * a_, T * z_, const int nm, const int n, T * w_ )
 {
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
   const int myid = threadIdx.x % tile_size + 1;
 #define	a(row,col)	(*(a_+((row)-1)+((col)-1)*nm))
 #define	z(row,col)	(*(z_+((row)-1)+((col)-1)*nm))
@@ -22,12 +22,12 @@ jac_tiled( T * a_, T * z_, const int nm, const int n, T * w_ )
     for(int i=1;i<=n;i++) {
       z(myid,i) = ZERO;
     }
-  } sync_over_cg<T,tile_size>();
+  } sync_on_cg<T,tile_size>();
   if ( eee ) {
     z(myid,myid) = ONE;
     w(myid) = a(myid,myid);
     a(myid,myid) = ZERO;
-  } sync_over_cg<T,tile_size>();
+  } sync_on_cg<T,tile_size>();
 
 
   #pragma unroll 1
@@ -98,7 +98,7 @@ jac_tiled( T * a_, T * z_, const int nm, const int n, T * w_ )
         const int k=i+j-myid;
         am_ptr[k*nm] = ZERO;
 	w(myid) = (myid==j) ? wj : wi;
-      } sync_over_cg<T,tile_size>();
+      } sync_on_cg<T,tile_size>();
 
       T  *zm_ptr = &z(myid,0);
 
@@ -133,7 +133,7 @@ jac_tiled( T * a_, T * z_, const int nm, const int n, T * w_ )
         zm_ptr[i*nm] = cki;
         zm_ptr[j*nm] = ckj;
 
-      } sync_over_cg<T,tile_size>();
+      } sync_on_cg<T,tile_size>();
       stable = 0;
     }
 

@@ -11,7 +11,7 @@ imtql2_tiled_( const int nm, const int n,
                 bool const do_sort = (DO_SORT==1)
              )
 {
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
   const int myid = threadIdx.x % tile_size + 1;
 #define        z(row,col)        (*(z_+((row)-1)+((col)-1)*nm))
 #define        w(index)          (*(w_+((index)-1)))
@@ -37,7 +37,7 @@ imtql2_tiled_( const int nm, const int n,
       z(myid, i) = ZERO;
     }
     z(myid, myid) = ONE;
-  } sync_over_cg<T,tile_size>();
+  } sync_on_cg<T,tile_size>();
 
   #pragma unroll 1
   for(int l=1; l<=n; l++) { // most outer loop
@@ -51,14 +51,14 @@ imtql2_tiled_( const int nm, const int n,
       T * const d_ = shmem;
       T * const e_ = shmem + tile_size;
 
-      sync_over_cg<T,tile_size>();
+      sync_on_cg<T,tile_size>();
       int m; {
         m = min(l+myid,n)-1;
         const T tst1 = (Abs(d(m)) + Abs(d(m+1)))*tol;
         const T tst2 = Abs(e(m));
         const bool eee = (tst2 > tst1) || (l == n);
         m = (eee ? n : m);
-        min_over_cg<int,tile_size>(m);
+        min_on_cg<int,tile_size>(m);
       } _if_ ( m==l ) break; // converged
 
 
@@ -101,7 +101,7 @@ imtql2_tiled_( const int nm, const int n,
         const T q = (di1 - dix) * s + 2 * c * b;
         const T dx1 = fma(s, q, dix);
         delta_d = dx1 - dix;
-        sync_over_cg<T,tile_size>();
+        sync_on_cg<T,tile_size>();
         _if_ (myid==1) { e(i+1) = r; d(i+1) = dx1; }
         r = c * q - b;
 
@@ -125,7 +125,7 @@ imtql2_tiled_( const int nm, const int n,
     }
     _if_ (itr>max_sweep) { ierror = l; break; }
 
-  } sync_over_cg<T,tile_size>();
+  } sync_on_cg<T,tile_size>();
 
 
   _if_ ( do_sort ) {
@@ -134,7 +134,7 @@ imtql2_tiled_( const int nm, const int n,
       int * const pos_ = (int *)(shmem + tile_size);
       _if_(myid<=n) {
         pos(myid) = myid;
-      } sync_over_cg<T,tile_size>();
+      } sync_on_cg<T,tile_size>();
       #pragma unroll 1
       for(int i=2; i<=n; i++) {
         const int l = i - 1;
@@ -153,7 +153,7 @@ imtql2_tiled_( const int nm, const int n,
             d(il)=d(l); d(l)=dl;
           }
         }
-      } sync_over_cg<T,tile_size>();
+      } sync_on_cg<T,tile_size>();
     }
   }
   _if_ (myid<=n) {
@@ -171,7 +171,7 @@ imtql2_tiled_( const int nm, const int n,
 #undef        d
 #undef        e
 #undef        pos
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
   return ierror;
 }
 

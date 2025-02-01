@@ -6,7 +6,7 @@ __device__ void
 check_(const int id, const int nm, const int n, T *a_, const int m, const T *d_, const T *z_)
 {
   const int myid = threadIdx.x % WARP_GPU_SIZE + 1;
-  sync_over_warp();
+  sync_on_warp();
 #define	a(row,col)	(*(a_+(row-1)+(col-1)*nm))
 #define	z(row,col)	(*(z_+(row-1)+(col-1)*nm))
 #define	d(index)	(*(d_+(index-1)))
@@ -42,7 +42,7 @@ check_(const int id, const int nm, const int n, T *a_, const int m, const T *d_,
       const double r = ek - dxk;
       err1 = err1 + r * r;
     }
-  } sum_over_warp(err1);
+  } sum_on_warp(err1);
   err1 = Sqrt(err1);
 
   double err2 = ZERO;
@@ -51,14 +51,14 @@ check_(const int id, const int nm, const int n, T *a_, const int m, const T *d_,
       double r = ZERO;
       for (int k=myid; k<=n; k+=WARP_GPU_SIZE) {
         r += (double)z(k,i)*(double)z(k,j);
-      } sum_over_warp(r);
+      } sum_on_warp(r);
       const double t = (i==j ? ONE : ZERO);
       const double c = (i==j ? ONE: 2*ONE);
       r -= t;
       r *= r;
       err2 += c * r;
     }
-  } sum_over_warp(err2);
+  } sum_on_warp(err2);
   err2 = Sqrt(err2);
 
   if ( myid == 1 ) {
@@ -84,7 +84,7 @@ check_(const int id, const int nm, const int n, T *a_, const int m, const T *d_,
 #undef	z
 #undef	d
 #undef	e
-  sync_over_warp();
+  sync_on_warp();
 }
 
 template <class T>

@@ -37,7 +37,7 @@ imtql2_( const int nm, const int n,
   #pragma unroll 1
   for(int i=myid; i<=n; i+=WARP_GPU_SIZE) {
     z(i, i) = ONE;
-  } sync_over_warp();
+  } sync_on_warp();
 
   #pragma unroll 1
   for(int l=1; l<=n; l++) { // most outer loop
@@ -104,11 +104,11 @@ imtql2_( const int nm, const int n,
             const T dx1 = fma(s, q, dix);
             delta_d = dx1 - dix;
 
-            sync_over_warp();
+            sync_on_warp();
             _if_ (myid==1) {
        	      e(i+1) = r; d(i+1) = dx1;
               c_tmp[i0-i] = c; s_tmp[i0-i] = s;
-	    } sync_over_warp();
+	    } sync_on_warp();
 
             r = c * q - b;
 
@@ -126,7 +126,7 @@ imtql2_( const int nm, const int n,
               *zki0_ptr = c * f0 - s * f1;
               zki0_ptr+=WARP_GPU_SIZE; zki1_ptr+=WARP_GPU_SIZE;
             }
-          } sync_over_warp();
+          } sync_on_warp();
 
           if (flag) { i = i1-1; break; }
         }
@@ -141,14 +141,14 @@ imtql2_( const int nm, const int n,
     }
     _if_ (itr>max_sweep) { ierror = l; break; }
 
-  } sync_over_warp();
+  } sync_on_warp();
 
   _if_ ( do_sort ) {
     _if_ ( ierror == 0 ) {
       int * const pos_ = (int *)e_;
       for(int i=myid; i<=n; i+=WARP_GPU_SIZE) {
         pos(i) = i;
-      } sync_over_warp();
+      } sync_on_warp();
       #pragma unroll 1
       for(int i=2; i<=n; i++) {
         const int l = i - 1;
@@ -167,14 +167,14 @@ imtql2_( const int nm, const int n,
             d(il)=d(l); d(l)=dl;
           }
         }
-      } sync_over_warp();
+      } sync_on_warp();
     }
   }
 
 #undef        z
 #undef        d
 #undef        e
-  sync_over_warp();
+  sync_on_warp();
   return ierror;
 }
 

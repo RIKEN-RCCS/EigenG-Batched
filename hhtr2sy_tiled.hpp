@@ -5,7 +5,7 @@ template <class T, int tile_size>
 __device__  __noinline__ void
 hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict__ z_, const bool do_sort = (DO_SORT == 1) )
 {
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
   const int myid = threadIdx.x % tile_size + 1;
 #define a(row,col)      (*(a_+((row)-1)+((col)-1)*nm))
 #define z(row,col)      (*(z_+((row)-1)+((col)-1)*nm))
@@ -20,7 +20,7 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
   _if_ (n == 1) {
     _if_ (myid == 1) {
       z(1, 1) = ONE;
-    } sync_over_cg<T,tile_size>();
+    } sync_on_cg<T,tile_size>();
     return;
   }
   _if_ (n == 2) {
@@ -30,7 +30,7 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
         const T t = ONE + Div(a(1, 2), ei);
         z(1, myid) *= t;
       }
-    } sync_over_cg<T,tile_size>();
+    } sync_on_cg<T,tile_size>();
     return;
   }
 
@@ -44,7 +44,7 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
 #endif
   const int ii = (n-1) % BLK_I + 1;
 
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
   #pragma unroll 1
   for (int i=2; i<=ii; i++) {
     const int l = i - 1;
@@ -60,7 +60,7 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
     for (int j=1; j<=n; j++) {
       T z_xid = __MASK__( *zki_ptr, eee );
       T s = a_xid * z_xid;
-      sum_over_cg<T,tile_size>(s);
+      sum_on_cg<T,tile_size>(s);
       z_xid += s * b_xid;
       _if_ ( eee ) { *zki_ptr = z_xid; }
       zki_ptr += nm;
@@ -88,7 +88,7 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
     for(int K=I;K<BLK_I-1;K++) {
       a(i+K,i+I) = ZERO;
     }}}
-    sync_over_cg<T,tile_size>();
+    sync_on_cg<T,tile_size>();
 
     T G[BLK_I][BLK_I];
     T ai_myid[BLK_I];
@@ -100,7 +100,7 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
 #if 1
     { int I=0; int K=0; int IIKK=BLK_I*(BLK_I+1)/2;
     for(int IK=0;IK<IIKK%4;IK++) {
-      sum_over_cg<T,tile_size>(G[K][I]);
+      sum_on_cg<T,tile_size>(G[K][I]);
       K++; _if_(K>I) { I++; K=0; }
     }
     for(int IK=IIKK%4;IK<IIKK;IK+=4) {
@@ -108,12 +108,12 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
       int I1=I; int K1=K; K++; _if_(K>I) { I++; K=0; }
       int I2=I; int K2=K; K++; _if_(K>I) { I++; K=0; }
       int I3=I; int K3=K; K++; _if_(K>I) { I++; K=0; }
-      sum4_over_cg<T,tile_size>(G[K0][I0],G[K1][I1],G[K2][I2],G[K3][I3]);
+      sum4_on_cg<T,tile_size>(G[K0][I0],G[K1][I1],G[K2][I2],G[K3][I3]);
     }}
 #else
     for(int I=0;I<BLK_I;I++) {
     for(int K=0;K<=I;K++) {
-        sum_over_cg<T,tile_size>(G[K][I]);
+        sum_on_cg<T,tile_size>(G[K][I]);
     }}
 #endif
     for(int I=0;I<BLK_I;I++) {
@@ -135,16 +135,16 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
       }
 #if 1
       { int II=BLK_I%4;
-        _if_(II&0x2) sum2_over_cg<T,tile_size>(s[0],s[1]);
-        _if_(II&0x1) sum_over_cg<T,tile_size>(s[II-1]);
+        _if_(II&0x2) sum2_on_cg<T,tile_size>(s[0],s[1]);
+        _if_(II&0x1) sum_on_cg<T,tile_size>(s[II-1]);
       for(int I=II;I<BLK_I;I+=4) {
-        sum4_over_cg<T,tile_size>(s[I],s[I+1],s[I+2],s[I+3]);
+        sum4_on_cg<T,tile_size>(s[I],s[I+1],s[I+2],s[I+3]);
       }}
 #else
       _if_(BLK_I%2==1) {
-        sum_over_cg<T,tile_size>(s[0]);
+        sum_on_cg<T,tile_size>(s[0]);
       } for(int I=BLK_I%2;I<BLK_I;I+=2) {
-        sum2_over_cg<T,tile_size>(s[I],s[I+1]);
+        sum2_on_cg<T,tile_size>(s[I],s[I+1]);
       }
 #endif
       {
@@ -176,21 +176,21 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
       }
 #if 1
       { int II=(BLK_I*BLK_J)%4;
-        _if_(II&0x2) sum2_over_cg<T,tile_size>(s[0][0],s[1%BLK_I][1/BLK_I]);
-        _if_(II&0x1) sum_over_cg<T,tile_size>(s[(II-1)%BLK_I][(II-1)/BLK_I]);
+        _if_(II&0x2) sum2_on_cg<T,tile_size>(s[0][0],s[1%BLK_I][1/BLK_I]);
+        _if_(II&0x1) sum_on_cg<T,tile_size>(s[(II-1)%BLK_I][(II-1)/BLK_I]);
       for(int IJ=II;IJ<BLK_I*BLK_J;IJ+=4) {
         int I0=(IJ+0)%BLK_I; int J0=(IJ+0)/BLK_I;
         int I1=(IJ+1)%BLK_I; int J1=(IJ+1)/BLK_I;
         int I2=(IJ+2)%BLK_I; int J2=(IJ+2)/BLK_I;
         int I3=(IJ+3)%BLK_I; int J3=(IJ+3)/BLK_I;
-        sum4_over_cg<T,tile_size>(s[I0][J0],s[I1][J1],s[I2][J2],s[I3][J3]);
+        sum4_on_cg<T,tile_size>(s[I0][J0],s[I1][J1],s[I2][J2],s[I3][J3]);
       }}
 #else
       for(int J=0;J<BLK_J;J++) {
       _if_(BLK_I%2==1) {
-        sum_over_cg<T,tile_size>(s[0][J]);
+        sum_on_cg<T,tile_size>(s[0][J]);
       } for(int I=BLK_I%2;I<BLK_I;I+=2) {
-        sum2_over_cg<T,tile_size>(s[I][J],s[I+1][J]);
+        sum2_on_cg<T,tile_size>(s[I][J],s[I+1][J]);
       }}
 #endif
       {
@@ -222,6 +222,6 @@ hhtr2sy_tiled_( const long nm, const int n, T * __restrict__ a_, T * __restrict_
 
 #undef a
 #undef z
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
 }
 

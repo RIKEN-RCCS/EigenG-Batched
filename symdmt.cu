@@ -6,7 +6,7 @@ template <class T, int tile_size>
 __global__ __noinline__ void
 symdmt_batch( int const nm, int const n, T const *a_, T const *d_ , T *z_ )
 {
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
   const int myid = threadIdx.x % tile_size + 1;
 #define a(row,col)      (*(a_+((row)-1)+((col)-1)*nm))
 #define z(row,col)      (*(z_+((row)-1)+((col)-1)*nm))
@@ -27,9 +27,9 @@ symdmt_batch( int const nm, int const n, T const *a_, T const *d_ , T *z_ )
     T z0 = ZERO;
     for(int k=1; k<=n; k++){
       T a0 = a(mxid,k+0);
-      sync_over_cg<T,tile_size>();
+      sync_on_cg<T,tile_size>();
       shmem[myid] = d(k+0) * a0;
-      sync_over_cg<T,tile_size>();
+      sync_on_cg<T,tile_size>();
       z0 += a0 * shmem[j+0];
     }
     _if_(eee) { z(myid,j+0) = z0; }
@@ -44,9 +44,9 @@ symdmt_batch( int const nm, int const n, T const *a_, T const *d_ , T *z_ )
 
     for(int k=1; k<=_K_; k++){
       T a0 = a(mxid,k+0);
-      sync_over_cg<T,tile_size>();
+      sync_on_cg<T,tile_size>();
       _if_(fff) { shmem[L+ 0] = d(k+0) * a0; }
-      sync_over_cg<T,tile_size>();
+      sync_on_cg<T,tile_size>();
       for(int J_=0;J_<4;J_++){
         Z[J_] += a0 * shmem[J_];
       }
@@ -56,10 +56,10 @@ symdmt_batch( int const nm, int const n, T const *a_, T const *d_ , T *z_ )
 
       T A[4], D[4];
       for(int K_=0;K_<4;K_++){ D[K_] = d(k+K_) * (A[K_] = a(mxid,k+K_)); }
-      sync_over_cg<T,tile_size>();
+      sync_on_cg<T,tile_size>();
       _if_(fff) {
         for(int K_=0;K_<4;K_++){ shmem[K_+4*L] = D[K_]; } }
-      sync_over_cg<T,tile_size>();
+      sync_on_cg<T,tile_size>();
 
       for(int J_=0;J_<4;J_++){
       for(int K_=0;K_<4;K_++){
@@ -76,7 +76,7 @@ symdmt_batch( int const nm, int const n, T const *a_, T const *d_ , T *z_ )
 #undef	a
 #undef	z
 #undef	d
-  sync_over_cg<T,tile_size>();
+  sync_on_cg<T,tile_size>();
 }
 
 

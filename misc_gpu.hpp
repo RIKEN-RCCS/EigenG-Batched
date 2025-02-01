@@ -47,9 +47,9 @@ extern __shared__ __align__(sizeof(float)*4) char __shmem[];
 #define	__SHMEM__(...)	(&(((T *)__shmem)[(threadIdx.x&(unsigned)(-tile_size))<<1]))
 
 #if defined(__NVCC__)
-#define	_if_	asm volatile ("// if branch is here."); if
+//#define	_if_	asm volatile ("// if branch is here."); if
+#define	_if_  if
 #endif
-
 #if defined(__HIPCC__)
 #define	_if_  if
 #endif
@@ -261,7 +261,7 @@ float FastSqrt(const float x) {
 }
 __host__ __device__ __forceinline__
 double FastSqrt(const double x) {
-  return Sqrt(x);
+  return (double)Sqrt((float)x);
 }
 
 __host__ __device__ __forceinline__
@@ -428,7 +428,7 @@ void prefetch_mat_cg(const int len, const T *a) {
 
 template < class T = int, int tile_size = WARP_GPU_SIZE >
 __device__ __forceinline__
-void sync_over_cg(void) {
+void sync_on_cg(void) {
 #if COOPERATIVE_GROUP_STANDARD
   auto const __cooperative_group__ = 
     cooperative_groups::tiled_partition<tile_size>(cooperative_groups::this_thread_block());
@@ -440,7 +440,7 @@ void sync_over_cg(void) {
 
 template < class T = int, int tile_size = WARP_GPU_SIZE >
 __device__ __forceinline__
-void bcast_over_cg(T &x, const int root) {
+void bcast_on_cg(T &x, const int root) {
 #if COOPERATIVE_GROUP_STANDARD
   auto const __cooperative_group__ = 
     cooperative_groups::tiled_partition<tile_size>(cooperative_groups::this_thread_block());
@@ -452,7 +452,7 @@ void bcast_over_cg(T &x, const int root) {
 
 template < class T = int, int tile_size = WARP_GPU_SIZE >
 __device__ __forceinline__
-void sum_over_cg(T &x_) {
+void sum_on_cg(T &x_) {
 #if COOPERATIVE_GROUP_STANDARD
   auto const __cooperative_group__ = 
     cooperative_groups::tiled_partition<tile_size>(cooperative_groups::this_thread_block());
@@ -469,7 +469,7 @@ void sum_over_cg(T &x_) {
 
 template < class T = int, int tile_size = WARP_GPU_SIZE >
 __device__ __forceinline__
-void max_over_cg(T &x_) {
+void max_on_cg(T &x_) {
 #if COOPERATIVE_GROUP_STANDARD
   auto const __cooperative_group__ = 
     cooperative_groups::tiled_partition<tile_size>(cooperative_groups::this_thread_block());
@@ -486,7 +486,7 @@ void max_over_cg(T &x_) {
 
 template < class T = int, int tile_size = WARP_GPU_SIZE >
 __device__ __forceinline__
-void min_over_cg(T &x_) {
+void min_on_cg(T &x_) {
 #if COOPERATIVE_GROUP_STANDARD
   auto const __cooperative_group__ = 
     cooperative_groups::tiled_partition<tile_size>(cooperative_groups::this_thread_block());
@@ -503,7 +503,7 @@ void min_over_cg(T &x_) {
 
 template < class T = int, int tile_size = WARP_GPU_SIZE >
 __device__ __forceinline__
-T red2_over_cg(const T x_, const T y_, const int km) {
+T red2_on_cg(const T x_, const T y_, const int pickup_lane) {
 #if COOPERATIVE_GROUP_STANDARD
   auto const __cooperative_group__ = 
     cooperative_groups::tiled_partition<tile_size>(cooperative_groups::this_thread_block());
@@ -512,23 +512,31 @@ T red2_over_cg(const T x_, const T y_, const int km) {
 #endif
   const int myid = __cooperative_group__.thread_rank()+1;
   T x = x_; T y = y_;
-  const bool eee = ((myid & 0x1) != 0);
+  const bool eee = ((myid & 0x1) != 0); // if myid is odd
+  // x: x1 x2 x3 x4
+  // y: y1 y2 y3 y4
   __Cond_swap__(x, y, eee);
+  // x: y1 x2 y3 x4
+  // y: x1 y2 x3 y4
   x = y + __cooperative_group__.shfl_xor(x, 1);
-  for(int lane=2; lane<tile_size; lane<<=1) {
+  // x: x1+x2 y1+y2 x3+x4 y3+y4
+  for(int lane=2; lane<tile_size; lane<<=1) { // tile_size = 4
     x += __cooperative_group__.shfl_xor(x, lane);
+  // x: x1+x2+x3+x4 y1+y2+y3+y4 x1+x2+x3+x4 y1+y2+y3+y4
   }
   x = __MASK__( x, myid<=2 );
-  x = __cooperative_group__.shfl(x, km);
+  // x: x1+x2+x3+x4 y1+y2+y3+y4 0 0
+  x = __cooperative_group__.shfl(x, pickup_lane);
+  // choose : x1+x2+x3+x4 y1+y2+y3+y4 0 0 by index 'km'
   return x;
 }
 
 template < class T = int, int tile_size = WARP_GPU_SIZE >
 __device__ __forceinline__
-void sum2_over_cg(T &x_, T &y_) {
+void sum2_on_cg(T &x_, T &y_) {
   if (tile_size<=1) {
-    sum_over_cg<T,tile_size>(x_);
-    sum_over_cg<T,tile_size>(y_);
+    sum_on_cg<T,tile_size>(x_);
+    sum_on_cg<T,tile_size>(y_);
   } else {
 #if COOPERATIVE_GROUP_STANDARD
     auto const __cooperative_group__ = 
@@ -552,10 +560,10 @@ void sum2_over_cg(T &x_, T &y_) {
 
 template < class T = int, int tile_size = WARP_GPU_SIZE >
 __device__ __forceinline__
-void sum4_over_cg(T &x_, T &y_, T &z_, T &w_) {
+void sum4_on_cg(T &x_, T &y_, T &z_, T &w_) {
   if (tile_size<=2) {
-    sum2_over_cg<T,tile_size>(x_,y_);
-    sum2_over_cg<T,tile_size>(z_,w_);
+    sum2_on_cg<T,tile_size>(x_,y_);
+    sum2_on_cg<T,tile_size>(z_,w_);
   } else {
 #if COOPERATIVE_GROUP_STANDARD
     auto const __cooperative_group__ = 
@@ -587,8 +595,8 @@ void sum4_over_cg(T &x_, T &y_, T &z_, T &w_) {
 }
 
 
-__device__ __forceinline__ void
-sync_over_warp(void)
+__device__ __forceinline__
+void sync_on_warp(void)
 {
 #if defined(__NVCC__)
   __syncwarp();
@@ -604,14 +612,14 @@ sync_over_warp(void)
   
 }
 #if defined(__NVCC__)
-#define SYNC_IF_NEEDED(...) _if_(tile_size<WARP_GPU_SIZE)sync_over_warp()
+#define SYNC_IF_NEEDED(...) _if_(tile_size<WARP_GPU_SIZE)sync_on_warp()
 #else
 #define SYNC_IF_NEEDED(...) /* */
 #endif
 
 template <class T>
-__device__ __forceinline__ void
-bcast_over_warp(T &x_, const int root)
+__device__ __forceinline__
+void bcast_on_warp(T &x_, const int root)
 {
 #if defined(__NVCC__)
   T x = x_;
@@ -627,8 +635,8 @@ bcast_over_warp(T &x_, const int root)
 
 #if defined(__NVCC__)
 template <>
-__device__ __forceinline__ void
-bcast_over_warp(float &x_, const int root)
+__device__ __forceinline__
+void bcast_on_warp(float &x_, const int root)
 {
   float x = x_;
   asm volatile ( 
@@ -642,16 +650,16 @@ bcast_over_warp(float &x_, const int root)
 
 template <class T>
 __device__ __forceinline__ void
-bcast2_over_warp(T &x_, T &y_, const int root)
+bcast2_on_warp(T &x_, T &y_, const int root)
 {
-  bcast_over_warp(x_, root);
-  bcast_over_warp(y_, root);
+  bcast_on_warp(x_, root);
+  bcast_on_warp(y_, root);
 }
 
 #if defined(__NVCC__)
 template <>
-__device__ __forceinline__ void
-bcast2_over_warp(float &x_, float &y_, const int root)
+__device__ __forceinline__
+void bcast2_on_warp(float &x_, float &y_, const int root)
 {
   float x = x_;
   float y = y_;
@@ -667,8 +675,8 @@ bcast2_over_warp(float &x_, float &y_, const int root)
 #endif
 
 template <class T>
-__device__ __inline__ void
-sum_over_warp(T &x_)
+__device__ __inline__
+void sum_on_warp(T &x_)
 {
 #if defined(__CUDA_ARCH__)
   T x = x_;
@@ -696,8 +704,8 @@ sum_over_warp(T &x_)
 
 #if defined(__NVCC__)
 template <>
-__device__ __inline__ void
-sum_over_warp(float &x_)
+__device__ __inline__
+void sum_on_warp(float &x_)
 {
   float x = x_;
   asm volatile (
@@ -720,8 +728,8 @@ sum_over_warp(float &x_)
 #endif
 
 template <class T>
-__device__ __inline__ void
-sum2_over_warp(T &x_, T &y_)
+__device__ __inline__
+void sum2_on_warp(T &x_, T &y_)
 {
   T x = x_;
   T y = y_;
@@ -765,8 +773,8 @@ sum2_over_warp(T &x_, T &y_)
 
 #if defined(__NVCC__)
 template <>
-__device__ __inline__ void
-sum2_over_warp(float &x_, float &y_)
+__device__ __inline__
+void sum2_on_warp(float &x_, float &y_)
 {
   float x = x_;
   float y = y_;
@@ -805,8 +813,8 @@ sum2_over_warp(float &x_, float &y_)
 #endif
 
 template <class T>
-__device__ __inline__ void
-sum4_over_warp(T &x_, T &y_, T &z_, T &w_)
+__device__ __inline__
+void sum4_on_warp(T &x_, T &y_, T &z_, T &w_)
 {
   T x = x_;
   T y = y_;
@@ -871,8 +879,8 @@ sum4_over_warp(T &x_, T &y_, T &z_, T &w_)
 
 #if defined(__NVCC__)
 template <class T>
-__device__ __inline__ void
-max_over_warp(T &x_)
+__device__ __inline__
+void max_on_warp(T &x_)
 {
   T x = x_;
   x = Max(x, __shfl_xor_sync( 0xffffffff, x, 1, 32 ));
@@ -884,8 +892,8 @@ max_over_warp(T &x_)
 }
 
 template <class T>
-__device__ __inline__ void
-min_over_warp(T &x_)
+__device__ __inline__
+void min_on_warp(T &x_)
 {
   T x = x_;
   x = Min(x, __shfl_xor_sync( 0xffffffff, x, 1, 32 ));
@@ -900,8 +908,8 @@ min_over_warp(T &x_)
 // only neccessary for _small kernel
 #if defined(__NVCC__)
 template <class T>
-__device__ __inline__ void
-sum_over_warp(T &x_, const int bit)
+__device__ __inline__
+void sum_on_warp(T &x_, const int bit)
 {
   T x = x_;
   const int nlz=1<<bit;
@@ -914,11 +922,14 @@ sum_over_warp(T &x_, const int bit)
 #endif
 
 template <class T>
-__device__ __inline__ void
-red2_over_warp(T &x_, const T y_)
+__device__ __inline__
+T red2_on_warp(const T x_, const T y_, const int pickup_lane)
 {
   T x = x_;
   T y = y_;
+
+  // x: x1 x2 x3 x4 ......
+  // y: y1 y2 y3 y4 ......
 
   const bool eee = (threadIdx.x & 0x1);
   {
@@ -926,13 +937,21 @@ red2_over_warp(T &x_, const T y_)
     y = (eee ? y : x);
     x = t;
   }
+  // x: x1 y2 x3 y4 ......
+  // y: y1 x2 y3 x4 ......
 
 #if defined(__CUDA_ARCH__)
   x = y + __shfl_xor_sync( 0xffffffff, x, 1, 32 );
+  // x: x12 y12 x34 y34 ......
   x += __shfl_xor_sync( 0xffffffff, x, 2, 32 );
+  // x: x1234 y1234 x1234 y1234 ......
   x += __shfl_xor_sync( 0xffffffff, x, 4, 32 );
+  // x: x12345678 y12345678 x12345678 y12345678 ......
   x += __shfl_xor_sync( 0xffffffff, x, 8, 32 );
+  // x: x1:16 y1:16 x1:16 y1:16 ......
   x += __shfl_xor_sync( 0xffffffff, x, 16, 32 );
+  // x: x1:32 y1:32 x1:32 y1:32 ......
+  x = __shfl_sync( 0xffffffff, x, pickup_lane, 32 );
 #endif
 #if defined(__HIPCC__)
   x = y + __shfl_xor( x,  1, WARP_GPU_SIZE );
@@ -943,15 +962,19 @@ red2_over_warp(T &x_, const T y_)
 #if WARP_GPU_SIZE == 64
   x +=    __shfl_xor( x, 32, WARP_GPU_SIZE );
 #endif
+  x = __shfl( x, pickup_lane, WARP_GPU_SIZE );
 #endif
-  x_ = x;
+
+  x = __MASK__( x, pickup_lane<=2 );
+
+  return x;
 }
 
 #if defined(__NVCC__)
 
 template <class T>
 __device__ __inline__ void
-find_maxloc_over_warp(T x_, int &pos)
+find_maxloc_on_warp(T x_, int &pos)
 {
   T x = Abs(x_); int p = threadIdx.x & 0x1f;
   for(int lane=1; lane<32; lane<<=1) {
