@@ -9,7 +9,7 @@ ifeq (x$(MAKEFILE),x)
 	MAKEFILE = Makefile_cuda
 endif
 
-a.out:
+all:
 	make -f $(MAKEFILE)
 
 clean:
