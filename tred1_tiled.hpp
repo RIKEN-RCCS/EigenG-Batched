@@ -124,7 +124,7 @@ tred1_tiled_(const int nm, const int n, T * __restrict__ a_)
            ajk1 = (j<=k+1) ? a(j,k+1) : 0
            vj = v(j) + ajk0 * u(k+0) + ajk1 * u(k+1)
            if(j<=k+0) v(j) = vj
-           vk0(j) = ajk0 * ((j<=k-1) ? u(j) : 0)
+           vk0(j) = ((j<=k-1) ? ajk0 * u(j) : 0)
            vk1(j) = ajk1 * u(j)
          }
 	 red2_on {vk0(:),vk1(:)} => v0 = {0,...,sum(vk0),sum(vk1),0,...,0}
@@ -141,14 +141,14 @@ tred1_tiled_(const int nm, const int n, T * __restrict__ a_)
       const int kx = l-myid;
       #pragma unroll 1
       for (int k=k0, km=k-myid; km<=kx; k+=2, km+=2, ajk_ptr+=(2*nm)) {
-        const bool eee = (km>=0); // k >= myid
-        const T ajk0 = __MASK__(*(ajk_ptr+0*nm), eee);
-        const T ajk1 = __MASK__(*(ajk_ptr+1*nm), km+1>=0);
+        const T ajk0 = *(ajk_ptr+0*nm);
+        const bool eee = (km>=-1); // k >= myid
+        const T ajk1 = __MASK__(*(ajk_ptr+1*nm), eee);
 
         const T vj = (v_myid + ajk0 * u(k+0)) + ajk1 * u(k+1);
-        __UPDATE__(v_myid, vj, eee); // k >= myid
+        __UPDATE__(v_myid, vj, km>=0); // k >= myid
         const bool fff = (km>=+1); // k >= myid+1
-        const T vk0 = ajk0 * __MASK__(u_myid, fff);
+        const T vk0 = __MASK__(ajk0 * u_myid, fff);
         const T vk1 = ajk1 * u_myid;
 
 	// -km = myid - k -> { myid-(1+lx1), myid-(3+lx1), ... }
