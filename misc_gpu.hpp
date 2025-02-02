@@ -478,6 +478,7 @@ T flip0to1(const T x)
   T const ONE = static_cast<T>(1);
   T const ZERO = static_cast<T>(0);
   T y = (x == ZERO) ? ONE : x;
+  return y;
 }
 #if defined(__CUDA_ARCH__)
 template <>
@@ -1126,7 +1127,7 @@ void sum4_on_cg(T &x_, T &y_, T &z_, T &w_) {
 
 
 
-#if defined(__CUDA_ARCH__)
+#if defined(__NVCC__)
 template < class T = int, int tile_size = WARP_GPU_SIZE >
 __device__ __noinline__
 void prefetch_mat_cg(const int len, const T *a) {

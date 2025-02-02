@@ -197,8 +197,8 @@ set_mat(T *a, const int nm, const int n, const Matrix_type type, const int seed_
 template < class T, Solver_type Solver > __host__ void
 GPU_batch_test(const int Itr, const int L, const int n, const Matrix_type type, const bool accuracy_test)
 {
-//  const int nm = n + (n&0x1);
-  const int nm = n;
+  const int nm = n + (n&0x1);
+//  const int nm = n;
   const int m  = n;
   size_t len;
 
@@ -335,8 +335,8 @@ main(int argc, char* argv[])
 
   const int iter = 20;
 //  const int numBatch = 512;
-  const int numBatch = 1000;
-//  const int numBatch = 16384*1;
+//  const int numBatch = 1000;
+  const int numBatch = 16384*1;
   const Matrix_type type = Matrix_type::MATRIX_FRANK;
 //  const Matrix_type type = Matrix_type::MATRIX_LETKF;
 //  const Matrix_type type = Matrix_type::MATRIX_SYM_RAND;
@@ -345,8 +345,7 @@ main(int argc, char* argv[])
   const int nums[] = { 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 23, 24, 25, 28, 31, 32, 33, 47, 48, 49, 63, 64, 65, 95, 96, 97, 127, 128, 129, 159, 160, 161, 191, 192, 193, 223, 224, 225, 255, 256, 257, 319, 320, 321, 511, 512, 0 };
 #endif
 #if defined(__HIPCC__)
-  //const int nums[] = { 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 23, 24, 25, 28, 31, 32, 33, 47, 48, 49, 63, 64, 65, 95, 96, 97, 127, 128, 129, 159, 160, 161, 191, 192, 193, 223, 224, 225, 255, 256, 0 };
-  const int nums[] = { 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 23, 24, 25, 28, 31, 32, 33, 47, 48, 49, 63, 64, 65, 95, 96, 97, 127, 128, 129, 0 };
+  const int nums[] = { 3, 4, 5, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 20, 23, 24, 25, 28, 31, 32, 33, 47, 48, 49, 63, 64, 65, 95, 96, 97, 127, 128, 129, 159, 160, 161, 191, 192, 193, 223, 224, 225, 255, 256, 257, 319, 320, 321, 511, 512, 0 };
 #endif
 
 
