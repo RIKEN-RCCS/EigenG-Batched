@@ -57,12 +57,21 @@ template <class T, int tile_size>
 __global__ void
 eigen_GPU_batch_tiled_(const int L, const int nm, const int n, const int m, T *a_, T *w_, T *wk_, const int PRELOAD_SLOT)
 {
-  const int pos = (threadIdx.x+blockIdx.x*blockDim.x)/tile_size;
-//  const int myid = threadIdx.x % tile_size;
-//  if (pos>=L) return;
+  const size_t blks = (blockDim.x*gridDim.x)/tile_size;
+  const size_t len  = (long)nm*n;
 
-  const size_t len = (long)nm*n;
-  const int step = (blockDim.x*gridDim.x)/tile_size;
+#if 0
+  const int    L_   = L;
+  const size_t pos_ = (threadIdx.x+blockIdx.x*blockDim.x)/tile_size;
+  const size_t pos  = pos_;
+  const int    step = blks;
+#else
+  const int    L_   = (L-1)/blks+1;
+  const size_t pos_ = (threadIdx.x+blockIdx.x*blockDim.x)/tile_size;
+  const size_t pos  = pos_ * L_;
+  const int    step = 1;
+#endif
+
   T * a, * w, * wk;
 
 #if DO_PREFETCH
@@ -78,9 +87,10 @@ eigen_GPU_batch_tiled_(const int L, const int nm, const int n, const int m, T *a
 
   a  = a_  + pos*len;
   w  = w_  + pos*m;
-  wk = wk_ + pos*len;
+  wk = wk_ + pos_*len;
+
   #pragma unroll 1
-  for (int id_=0; id_<L; id_+=step) {
+  for (int id_=0; id_<L_; id_+=step) {
     const int id = id_ + pos;
     const bool run = (id < L);
 
@@ -129,14 +139,25 @@ template <class T>
 __global__ void
 eigen_GPU_batch_(const int L, const int nm, const int n, const int m, T *a_, T *w_, T *e_, T * wk_, const int PRELOAD_SLOT)
 {
-  const int pos = (threadIdx.x+blockIdx.x*blockDim.x)/WARP_GPU_SIZE;
+  const size_t blks = (blockDim.x*gridDim.x)/WARP_GPU_SIZE;
+  const size_t len  = (long)nm*n;
+
+#if 1
+  const int    L_   = L;
+  const size_t pos_ = (threadIdx.x+blockIdx.x*blockDim.x)/WARP_GPU_SIZE;
+  const size_t pos  = pos_;
+  const int    step = blks;
+#else
+  const int    L_   = (L-1)/blks+1;
+  const size_t pos_ = (threadIdx.x+blockIdx.x*blockDim.x)/WARP_GPU_SIZE;
+  const size_t pos  = pos_ * L_;
+  const int    step = 1;
+#endif
+
 #if TIMER
   const int myid = (threadIdx.x % WARP_GPU_SIZE);
 #endif
-  if (pos>=L) return;
 
-  const size_t len = nm*n;
-  const int step = (blockDim.x*gridDim.x)/WARP_GPU_SIZE;
   T * a, * w, * wk, * e;
 
 #if DO_PREFETCH
@@ -158,10 +179,11 @@ eigen_GPU_batch_(const int L, const int nm, const int n, const int m, T *a_, T *
 
   a  = a_  + pos*len;
   w  = w_  + pos*n;
-  wk = wk_ + pos*len;
-  e  = e_  + pos*n;
+  wk = wk_ + pos_*len;
+  e  = e_  + pos_*n;
+
   #pragma unroll 1
-  for (int id_=0; id_<L; id_+=step) {
+  for (int id_=0; id_<L_; id_+=step) {
     const int id = id_ + pos;
     const bool run = (id < L);
 
@@ -176,8 +198,8 @@ eigen_GPU_batch_(const int L, const int nm, const int n, const int m, T *a_, T *
     // n >= 33 --> mb <= min(16,34/2-1) = 16
 //    const int mb=2; // 2*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
 //    const int mb=3; // 2*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
-//    const int mb=4; // 2*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
-    const int mb=16; // 2*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
+    const int mb=4; // 2*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
+//    const int mb=16; // 2*(mb+1) <= n+1 && 2*mb <= WARP_GPU_SIZE
     T * u_=wk+0*nm*(mb+1); // < mb*nm+max(BLK_J,BLK_K)
     T * v_=wk+1*nm*(mb+1); // < mb*nm+max(BLK_J,BLK_K)
     if(run) hhsy2tr_ (nm, n, a, w, e, mb, u_, v_);

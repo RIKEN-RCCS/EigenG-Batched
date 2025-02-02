@@ -53,8 +53,8 @@
 
 
 #if defined(__NVCC__)
-//#define SYNC_IF_NEEDED(...) _if_(tile_size<WARP_GPU_SIZE)sync_on_warp()
-#define SYNC_IF_NEEDED(...) /* */
+#define SYNC_IF_NEEDED(...) _if_(tile_size<WARP_GPU_SIZE)sync_on_warp()
+//#define SYNC_IF_NEEDED(...) /* */
 #else
 #define SYNC_IF_NEEDED(...) /* */
 #endif
@@ -64,8 +64,8 @@ extern __shared__ __align__(sizeof(float)*4) char __shmem[];
 #define	__SHMEM__(...)	(&(((T *)__shmem)[(threadIdx.x&(unsigned)(-tile_size))<<1]))
 
 #if defined(__NVCC__)
-//#define	_if_	asm volatile ("// if branch is here."); if
-#define	_if_  if
+#define	_if_	asm volatile ("// if branch is here."); if
+//#define	_if_  if
 #endif
 #if defined(__HIPCC__)
 #define	_if_  if
