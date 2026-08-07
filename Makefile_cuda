@@ -62,16 +62,18 @@ LIBOPT = -leigenGbatch
 
 all: a.out $(LIBS)
 a.out : $(OBJSS) $(LIBS)
-	$(NVCC) -o $@ $(OBJSS) -L./ -L$(CUDA_PATH)/lib64 -lcuda -lcudart -lcusolver -lcublas -lm -lgomp
+	$(NVCC) -o $@ $(OBJSS) -L./ -L$(CUDA_PATH)/lib64 -L$(MATH_LIBS)/lib64/ -lcuda -lcudart -lcusolver -lcublas -lm -lgomp
 	cp a.out a.out-cuda
 
 main.o: main.cpp
-	$(NVCC) -c -o $@ $< -I$(CUDA_PATH)/include -DPRINT_DIAGNOSTIC=0 --compiler-options -fopenmp
+	$(NVCC) -c -o $@ $< -I$(CUDA_PATH)/include -I$(MATH_LIBS)/include/ -DPRINT_DIAGNOSTIC=0 --compiler-options -fopenmp
 libeigenGbatch.a: eigen_GPU_batch.o
-	ar cr libeigenGbatch.a $<
+	ar crs libeigenGbatch.a $<
 	ranlib libeigenGbatch.a 
+	nvcc -shared -o libeigenGbatchCUDA.so eigen_GPU_batch.o -lcudart
+
 eigen_GPU_batch.o: eigen_GPU_batch.cu
-	$(NVCC) -c -o $@ $(NVCCOPT) $<
+	$(NVCC) -c -o $@ -Xcompiler -fPIC $(NVCCOPT) $<
 	$(NVCC) --ptx $(NVCCOPTmin) $<
 eigen_GPU_check.o: eigen_GPU_check.cu
 	$(NVCC) -c -o $@ $(NVCCOPT) $<

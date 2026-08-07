@@ -29,6 +29,8 @@ eigen_GPU_batch_DP(const int L, const int nm, const int n, const int m, double *
 void
 eigen_GPU_batch_FP(const int L, const int nm, const int n, const int m, float * a, float * w, float *wk, const gpuStream_t stream);
 
+void eigen_GPU_batch_BufferSize_DP(const int L, const int nm, const int n, const int m, double * a, double * w, size_t *lwork);
+void eigen_GPU_batch_BufferSize_FP(const int L, const int nm, const int n, const int m, float * a, float * w, size_t *lwork);
 #ifdef __cplusplus
 }
 #endif

@@ -17,8 +17,8 @@ HIPCCOPT=\
 		-Wno-unused-variable
 
 # AMD Instinct MI100
-#HIPCCOPT:= $(HIPCCOPT) \
-#		--offload-arch=gfx908 -D__GFX9__
+HIPCCOPT:= $(HIPCCOPT) \
+		--offload-arch=gfx908 -D__GFX9__
 # AMD Instinct MI2X0
 #HIPCCOPT:= $(HIPCCOPT) \
 #		--offload-arch=gfx90a -D__GFX9__
@@ -29,7 +29,7 @@ HIPCCOPT=\
 #HIPCCOPT:= $(HIPCCOPT) \
 #		--offload-arch=gfx1030,gfx1031,gfx1032,gfx1033 -D__GFX10__
 # AMD Instinct RDNA3
-HIPCCOPT:= $(HIPCCOPT) \
+#HIPCCOPT:= $(HIPCCOPT) \
 		--offload-arch=gfx1100,gfx1101,gfx1102,gfx1103 -D__GFX11__
 
 
@@ -48,8 +48,9 @@ main.o: main.cpp
 libeigenGbatch.a: eigen_GPU_batch.o
 	ar cr libeigenGbatch.a $<
 	ranlib libeigenGbatch.a 
+	$(HIPCC) -shared -o libeigenGbatchHIP.so eigen_GPU_batch.o -lhipsolver -lm -lgomp
 eigen_GPU_batch.o: eigen_GPU_batch.cu
-	$(HIPCC) -c -o $@ $< $(HIPCCOPT)
+	$(HIPCC) -c -o $@ -fPIC $< $(HIPCCOPT)
 	$(HIPCC) -S $< $(HIPCCOPT)
 eigen_GPU_check.o: eigen_GPU_check.cu
 	$(HIPCC) -c -o $@ $< $(HIPCCOPT)

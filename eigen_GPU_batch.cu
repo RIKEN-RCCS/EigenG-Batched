@@ -326,6 +326,15 @@ eigen_GPU_batch_RUN(const int L, const int nm, const int n, const int m, T * a, 
 
 extern "C" {
 
+__host__ void eigen_GPU_batch_BufferSize_DP(const int L, const int nm, const int n, const int m, double * a, double * w, size_t *lwork)
+{
+    eigen_GPU_batch_BufferSize<double>(L, nm, n, m, a, w, lwork);
+}
+__host__ void eigen_GPU_batch_BufferSize_FP(const int L, const int nm, const int n, const int m, float * a, float * w, size_t *lwork)
+{
+    eigen_GPU_batch_BufferSize<float>(L, nm, n, m, a, w, lwork);
+}
+
 __host__ void
 eigen_GPU_batch_DP(const int L, const int nm, const int n, const int m, double * a, double * w, double *wk, const gpuStream_t stream)
 {
