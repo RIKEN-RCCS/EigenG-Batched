@@ -25,12 +25,15 @@ HIPCCOPT=\
 # AMD Instinct MI300x
 #HIPCCOPT:= $(HIPCCOPT) \
 #		--offload-arch=gfx942 -D__GFX9__
-# AMD Instinct RDNA2
+# AMD RDNA2
 #HIPCCOPT:= $(HIPCCOPT) \
 #		--offload-arch=gfx1030,gfx1031,gfx1032,gfx1033 -D__GFX10__
-# AMD Instinct RDNA3
+# AMD RDNA3
+#HIPCCOPT:= $(HIPCCOPT) \
+#		--offload-arch=gfx1100,gfx1101,gfx1102,gfx1103 -D__GFX11__
+# AMD RDNA4
 HIPCCOPT:= $(HIPCCOPT) \
-		--offload-arch=gfx1100,gfx1101,gfx1102,gfx1103 -D__GFX11__
+		--offload-arch=gfx1200,gfx1201 -D__GFX12__
 
 
 OBJS = main.o eigen_GPU_check.o
@@ -40,7 +43,8 @@ LIBOPT = -leigenGbatch
 
 all: a.out $(LIBS)
 a.out : $(OBJSS) $(LIBS)
-	$(HIPCC) -o $@ $(OBJSS) $(HIPCCOPT) -L./ -lhipsolver -lm -lgomp
+	$(HIPCC) -o $@ $(OBJSS) $(HIPCCOPT) \
+	-L./ -L/opt/rocm/latest/lib -lhipsolver -lm -lgomp
 	cp a.out a.out-hip
 
 main.o: main.cpp

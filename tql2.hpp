@@ -1,5 +1,9 @@
 #pragma once
 
+//
+// It performs inaccurate behaviour when AMD HIP
+// Must fix bugs
+//
 template <class T>
 __device__ __noinline__ int
 tql2_( const int nm, const int n,
